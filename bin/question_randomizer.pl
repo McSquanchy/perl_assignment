@@ -6,9 +6,12 @@ use warnings;
 use diagnostics;
 use Getopt::Long;
 use Try::Catch;
+use lib "../lib/";
+use Utility::Args;
 use File::Slurp;
 use List::Util 'shuffle';
 use experimental 'signatures';
+use Carp;
 
 
 state $ascii_header = 
@@ -29,17 +32,32 @@ state %args;
 
 
 GetOptions( \%args, 
-            "file=s", 
+            "master=s", 
             "output=s", 
             "help!" )
 or die("Error in command line arguments\n");
 
 
+parse_args();
 print_header();
 
-say $args{"file"};
 
-
+sub parse_args() {
+    if (scalar(keys %args) == 0) {
+        usage();   
+        exit(1);
+    }
+    if ( $args{help}) {
+        usage();   
+        exit(0);
+    }
+    if (! $args{master}) {
+        croak "No master file specified\n";
+    }
+    elsif ( !-f $args{master} || !-r $args{master} ) {
+        croak "The file $args{master} cannot be read\n";
+    }
+}
 
 sub print_header() {  
     printf "%s", $ascii_header;
