@@ -25,10 +25,20 @@ v0.1                                               09.09.2020
 Created by Kevin Buman                                   
                                                              
 );
+state %args;
 
+
+GetOptions( \%args, 
+            "file=s", 
+            "output=s", 
+            "help!" )
+or die("Error in command line arguments\n");
 
 
 print_header();
+
+say $args{"file"};
+
 
 
 sub print_header() {  
