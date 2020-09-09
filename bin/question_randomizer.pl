@@ -27,6 +27,7 @@ v0.1                                               09.09.2020
 Created by Kevin Buman                                   
                                                              
 );
+
 state %args;
 
 GetOptions( \%args, "master=s", "output=s", "help!" )
@@ -38,10 +39,11 @@ print_header();
 my @input;
 tie @input, 'Tie::File', $args{master} or die $!;
 
-my $output = $args{output} // get_processed_filename( extract_filename( $args{master} ) );
+my $fn_output = $args{output}
+  // get_processed_filename( extract_filename( $args{master} ) );
 
 my @output;
-tie @output, 'Tie::File', $output or die $!;
+tie @output, 'Tie::File', $fn_output or die $!;
 
 # copy master file to the output file.
 @output = @input;
@@ -49,16 +51,28 @@ tie @output, 'Tie::File', $output or die $!;
 # input is no longer needed;
 untie @input;
 
-my @answers;
+shuffle_answers(@output);
 
-for (0.. $#output) {
-    if ($output[$_] =~ / \[ [\s,X,x] \] /x) {
-            $output[$_] =~ s/ \[ [X,x] \] /\[ \]/x;
-            push ( @ answers, $output[$_]);
+sub shuffle_answers(@fh) {
+    my @answers;
+
+    for ( 0 .. $#fh ) {
+        if ( $fh[$_] =~ /^\d+\./ ) {
+            push @answers, { indices => [] };
+        }
+        elsif ( $fh[$_] =~ / \[ \s* /x ) {
+
+            $fh[$_] = "adfs";
+            if ( $#answers >= 0 ) {
+                push $answers[-1]->{indices}->@*, $_;
+            }
+        }
+    }
+
+    for (@answers) {
+        @fh[ $_->{indices}->@* ] = @fh[ shuffle $_->{indices}->@* ];
     }
 }
-
-print join "\n", @answers;
 
 sub parse_args() {
     if ( scalar( keys %args ) == 0 ) {
