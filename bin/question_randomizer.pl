@@ -22,7 +22,7 @@ state $ascii_header = q(
  / _, _/ /_/ / / / / /_/ / /_/ / / / / / / / / /_/  __/ /    
 /_/ |_|\__,_/_/ /_/\__,_/\____/_/ /_/ /_/_/ /___/\___/_/     
                                                              
-v0.1                                               09.09.2020
+v0.2                                               09.09.2020
                                        
 Created by Kevin Buman                                   
                                                              
@@ -51,18 +51,20 @@ tie @output, 'Tie::File', $fn_output or die $!;
 # input is no longer needed;
 untie @input;
 
-shuffle_answers(@output);
+shuffle_answers(\@output);
 
-sub shuffle_answers(@fh) {
+untie @output;
+
+sub shuffle_answers($fh) {  
     my @answers;
 
-    for ( 0 .. $#fh ) {
-        if ( $fh[$_] =~ /^\d+\./ ) {
+    for ( 0 .. scalar($fh->@*)-1) {
+        if ( $fh->[$_] =~ /^\d+\./ ) {
             push @answers, { indices => [] };
         }
-        elsif ( $fh[$_] =~ / \[ \s* /x ) {
+        elsif ( $fh->[$_] =~ / \[ \s* /x ) {
 
-            $fh[$_] = "adfs";
+            $fh->[$_] =~ s/ \[ [X,x] /\[ /x;
             if ( $#answers >= 0 ) {
                 push $answers[-1]->{indices}->@*, $_;
             }
@@ -70,7 +72,7 @@ sub shuffle_answers(@fh) {
     }
 
     for (@answers) {
-        @fh[ $_->{indices}->@* ] = @fh[ shuffle $_->{indices}->@* ];
+        $fh->[ $_->{indices}->@* ] = $fh->[ shuffle $_->{indices}->@* ];
     }
 }
 
