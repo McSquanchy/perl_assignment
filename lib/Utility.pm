@@ -18,7 +18,11 @@ sub print_header($ascii) {
     printf "%s", $ascii;
 }
 
-
+#
+# Print the current state to STDOUT
+sub print_progress($string) {
+    printf "%s\n", $string;
+}
 
 
 ############################################################
@@ -35,13 +39,12 @@ require Exporter;
 
 use experimental 'signatures';
 
-use File::Spec;
-
 sub error_args() {
     warn "\nWrong flags. See --help for more information.\n\n";
 }
 
 sub extract_filename($fn) {
+    use File::Spec;
     my $system_separator = File::Spec->catfile( '', '' );
     my @split            = split /$system_separator/, $fn;
     return $split[-1];

@@ -8,6 +8,7 @@ use experimental 'signatures';
 use Carp;
 
 use Getopt::Long;
+use Try::Catch;
 use List::Util 'shuffle';
 use Tie::File;
 
@@ -28,50 +29,65 @@ state $ascii_header = q(
  \______/  \_______/ \______/ |__/       \_______/|_______/ 
                                                             
                                                             
-v0.1                                               09.09.2020
+v0.1                                               10.09.2020
                                        
 Created by Kevin Buman                                   
                                                              
 );
 
 state %args;
+state @submission_filenames;
+
 
 Print::print_header($ascii_header);
 
 # Read flags and store values in the hash
-GetOptions( \%args, "master=s", "submissions=s{,}", "help!" )
+GetOptions( \%args, "master=s", "submissions=s{,}" => \@submission_filenames, "help!" )
   or die( Args::error_args() );
 
 parse_args();
 
-sub parse_args() {
-    my $argc  = keys %args;
-    my @paths = ();
-    if ( $argc > 2 ) {
-        warn "\nToo many arguments. See --help for more information.\n\n";
-        die("too_many_args");
+Print::print_progress("Opening master\t\t$args{master}");
+
+parse_master();
+
+
+sub parse_master() {
+    Print::print_progress("Processing master");
+    my $fh;
+    try {
+        open ($fh, $args{master});
+    } catch {
+        
+    };
+
+    my @questions; 
+
+    foreach my $line (<$fh>)  {
+        my $previous_line_was_question = 0;
+        # check if the current line is the beginning of a question
+        if ( $line =~ /^\d+\./ ) {
+
+            # add new hash to @questions
+            push @questions, { question => $line, answers => [] };
+            $previous_line_was_question = 1;
+        }
+        elsif ( $line =~ /\w+/ ) {
+            say $line;
+            # say $previous_line_was_question;
+            if ( $previous_line_was_question == 1 ) {
+                # say $line;
+                $questions[-1]->{question} .= $line;
+            }
+        }
+        else {
+            $previous_line_was_question = 0;
+        }
     }
-    elsif ( $argc == 0 ) {
-        warn "\nToo few arguments. See --help for more information.\n\n";
-        die("too_few_args");
-    }
-    elsif ( $argc == 2 && $args->{"help"} ) {
-        warn "\nWrong usage. See --help for more information.\n\n";
-        die("wrong_args");
-    }
-    elsif ( $argc == 1 && $args->{"help"} ) {
-        _usage();
-        exit(0);
-    }
-    elsif ( $argc != 2 && !( $args->{"master"} && $args->{"submissions"} ) ) {
-        error_args();
-        die("error_args");
-    }
-    else {
-        @paths[0] = $args->{"master"};
-        @paths[1] = $args->{"submissions"};
-    }
-    return @paths;
+    close($fh);
+    # for (@questions) {
+    #     say $_->{question};
+    # }
 }
 
 sub usage {
@@ -81,4 +97,28 @@ sub usage {
     print "\t\t-o, --output:\tSpecify the output file.\n";
     print "\t\t-h, --help:\tRead more detailed instructions.\n";
     print "\n";
+}
+
+sub parse_args() {
+
+    if ( scalar( keys %args ) == 0 ) {
+        usage();
+        exit(0);
+    }
+
+    # display help if -h/--help present
+    if ( $args{help} ) {
+        usage();
+        exit(0);
+    }
+
+    # display error if no master file specified
+    if ( !$args{master} ) {
+        croak "No master file specified\n";
+    }
+    # check if master file doesn't exist or cannot be read
+    elsif ( !-f $args{master} || !-r $args{master} ) {
+        croak "The file $args{master} cannot be read\n";
+    }
+
 }

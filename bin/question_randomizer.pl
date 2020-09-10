@@ -48,17 +48,17 @@ my @output;
 my $size = -s $args{master};
 say $size;
 
-print_progress("Opening master\t\t$args{master}");
+Print::print_progress("Opening master\t\t$args{master}");
 
 # tie input file to @input
 tie @input, 'Tie::File', $args{master} or die $!;
 
-print_progress("Creating file\t\t$fn_output");
+Print::print_progress("Creating file\t\t$fn_output");
 
 # tie output file to @output
 tie @output, 'Tie::File', $fn_output or die $!;
 
-print_progress("Copying content");
+Print::print_progress("Copying content");
 
 # copy master file content to the output file.
 @output = @input;
@@ -71,14 +71,14 @@ shuffle_answers( \@output );
 # cleanup output tie;
 untie @output;
 
-print_progress("Cleaning up");
+Print::print_progress("Cleaning up");
 
 # Fix issue with File::Tie's untie method adding a blank line to the end of the file
 # by truncating to the original master's filesize
 truncate( $fn_output,    $size );
 truncate( $args{master}, $size );
 
-print_progress("\nFinished execution.\tSee output file $fn_output\n\n");
+Print::print_progress("\nFinished execution.\tSee output file $fn_output\n\n");
 
 #
 # Shuffle answers and replace correct answers
@@ -87,7 +87,7 @@ sub shuffle_answers($fh) {
     # holds a hash for each question
     my @answers;
 
-    print_progress("Removing indicators");
+    Print::print_progress("Removing indicators");
 
     # loop through all lines of $fh
     for ( 0 .. scalar( $fh->@* ) - 1 ) {
@@ -114,7 +114,7 @@ sub shuffle_answers($fh) {
         }
     }
 
-    print_progress("Shuffling lines");
+    Print::print_progress("Shuffling lines");
 
     # loop through all indices of @answers
     for (@answers) {
@@ -149,12 +149,6 @@ sub parse_args() {
     elsif ( !-f $args{master} || !-r $args{master} ) {
         croak "The file $args{master} cannot be read\n";
     }
-}
-
-#
-# Print the current state to STDOUT
-sub print_progress($string) {
-    printf "%s\n", $string;
 }
 
 #
