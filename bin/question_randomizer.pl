@@ -45,6 +45,9 @@ my $fn_output = $args{output}
 my @input;
 my @output;
 
+my $size = -s $args{master};
+say $size;
+
 print_progress("Opening master\t\t$args{master}");
 
 # tie input file to @input
@@ -65,10 +68,15 @@ untie @input;
 
 shuffle_answers( \@output );
 
-print_progress("Cleaning up");
-
 # cleanup output tie;
 untie @output;
+
+print_progress("Cleaning up");
+
+# Fix issue with File::Tie's untie method adding a blank line to the end of the file
+# by truncating to the original master's filesize
+truncate( $fn_output,    $size );
+truncate( $args{master}, $size );
 
 print_progress("\nFinished execution.\tSee output file $fn_output\n\n");
 
