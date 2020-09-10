@@ -5,12 +5,10 @@ require Exporter;
 @EXPORT = qw(usage error_args extract_filename get_processed_filename);
 
 use experimental 'signatures';
-use File::Spec;
-use List::Util 'shuffle';
-use Tie::File;
-use Text::LineNumber;
 
-sub usage {
+use File::Spec;
+
+sub usage() {
     print "\nUsage:\n\trandomizer command syntax:\n\n\t./randomizer [options] [arguments] [optional arguments]\n\n\tGeneric command options:\n\n";
     print "\t\t-m, --master:\tSpecify the file to be processed.\n";
     print "\t\t-h, --help:\tRead more detailed instructions.\n";
@@ -19,7 +17,7 @@ sub usage {
     print "\n";
 }
 
-sub error_args {
+sub error_args() {
     warn "\nWrong flags. See --help for more information.\n\n";
 }
 
@@ -35,9 +33,5 @@ sub get_processed_filename($initialfile) {
         }
         ->(localtime) . "-" . $initialfile;
 }
-
-
-
-
 
 1;
