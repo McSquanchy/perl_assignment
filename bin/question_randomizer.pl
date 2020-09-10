@@ -130,13 +130,13 @@ sub parse_args() {
 
     # display usage if no arguments supplied
     if ( scalar( keys %args ) == 0 ) {
-        Args::usage();
+        usage();
         exit(1);
     }
 
     # display help if -h/--help present
     if ( $args{help} ) {
-        Args::usage();
+        usage();
         exit(0);
     }
 
@@ -155,4 +155,15 @@ sub parse_args() {
 # Print the current state to STDOUT
 sub print_progress($string) {
     printf "%s\n", $string;
+}
+
+#
+# Print help to STDOUT
+sub usage() {
+    print "\nUsage:\n\trandomizer command syntax:\n\n\t./randomizer [options] [arguments] [optional arguments]\n\n\tGeneric command options:\n\n";
+    print "\t\t-m, --master:\tSpecify the file to be processed.\n";
+    print "\t\t-h, --help:\tRead more detailed instructions.\n";
+    print "\n\tOptional parameters:\n\n";
+    print "\t\t-o, --output:\tSpecify the output file.\n";
+    print "\n";
 }
