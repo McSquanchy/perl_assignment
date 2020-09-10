@@ -13,6 +13,7 @@ use Tie::File;
 
 use lib "../lib/";
 use Utility::Args;
+use Utility::Print;
 
 # Ascii header
 state $ascii_header = q(
@@ -37,7 +38,7 @@ GetOptions( \%args, "master=s", "output=s", "help!" )
   or die( error_args() );
 
 parse_args();
-print_header();
+print_header($ascii_header);
 
 my $fn_output = $args{output}
   // get_processed_filename( extract_filename( $args{master} ) );
@@ -87,11 +88,12 @@ sub shuffle_answers($fh) {
 
         # check if current line contains an answer
         elsif ( $fh->[$_] =~ / \[ \s* /x ) {
-
-            # replace the marker X or x with a blank space
-            $fh->[$_] =~ s/ \[ [X,x] /\[ /x;
+            
             # check if we've seen a question before
             if ( $#answers >= 0 ) {
+                
+                # replace the marker X or x with a blank space
+                $fh->[$_] =~ s/ \[ [X,x] /\[ /x;
 
                 # add line index to the array referenced by {indices}
                 push $answers[-1]->{indices}->@*, $_;
@@ -132,12 +134,6 @@ sub parse_args() {
     elsif ( !-f $args{master} || !-r $args{master} ) {
         croak "The file $args{master} cannot be read\n";
     }
-}
-
-#
-# Print the ascii text at the beginning of the execution
-sub print_header() {
-    printf "%s", $ascii_header;
 }
 
 #
