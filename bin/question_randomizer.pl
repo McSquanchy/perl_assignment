@@ -10,12 +10,11 @@ use Carp;
 use Getopt::Long;
 use List::Util 'shuffle';
 use Tie::File;
-use Text::Padding;
 
 use lib "../lib/";
 use Utility::Args;
 
-# Ascii header for shell
+# Ascii header
 state $ascii_header = q(
 
     ____                  __                _                
@@ -46,7 +45,6 @@ my $fn_output = $args{output}
 my @input;
 my @output;
 
-
 print_progress("Opening master\t\t$args{master}");
 # tie input file to @input
 tie @input, 'Tie::File', $args{master} or die $!;
@@ -68,7 +66,7 @@ print_progress("Cleaning up");
 # cleanup output tie;
 untie @output;
 
-print_progress("\nFinished execution\n\n");
+print_progress("\nFinished execution.\tSee output file $fn_output\n\n");
 
 #
 # Shuffle answers and replace correct answers
@@ -83,17 +81,15 @@ sub shuffle_answers($fh) {
 
         # check if the current line is the beginning of a question
         if ( $fh->[$_] =~ /^\d+\./ ) {
-
             # add new hash to @answers
             push @answers, { indices => [] };
         }
 
         # check if current line contains an answer
         elsif ( $fh->[$_] =~ / \[ \s* /x ) {
-            
+
             # replace the marker X or x with a blank space
             $fh->[$_] =~ s/ \[ [X,x] /\[ /x;
-
             # check if we've seen a question before
             if ( $#answers >= 0 ) {
 
@@ -102,14 +98,14 @@ sub shuffle_answers($fh) {
             }
         }
     }
-
+    
     print_progress("Shuffling lines");
 
     # loop through all indices of @answers
     for (@answers) {
 
         # shuffle answers of the current section
-        $fh->[ $_->{indices}->@* ] = $fh->[ shuffle $_->{indices}->@* ];
+        $fh->@[ $_->{indices}->@* ] = $fh->@[ shuffle ($_->{indices}->@*) ];
     }
 }
 
