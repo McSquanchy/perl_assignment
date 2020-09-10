@@ -37,15 +37,6 @@ use experimental 'signatures';
 
 use File::Spec;
 
-sub usage() {
-    print "\nUsage:\n\trandomizer command syntax:\n\n\t./randomizer [options] [arguments] [optional arguments]\n\n\tGeneric command options:\n\n";
-    print "\t\t-m, --master:\tSpecify the file to be processed.\n";
-    print "\t\t-h, --help:\tRead more detailed instructions.\n";
-    print "\n\tOptional parameters:\n\n";
-    print "\t\t-o, --output:\tSpecify the output file.\n";
-    print "\n";
-}
-
 sub error_args() {
     warn "\nWrong flags. See --help for more information.\n\n";
 }
