@@ -12,7 +12,7 @@ use List::Util 'shuffle';
 use Tie::File;
 
 use lib "../lib/";
-use Utility::Args;
+use Utility;
 
 # Ascii header
 state $ascii_header = q(
@@ -34,4 +34,4 @@ Created by Kevin Buman
                                                              
 );
 
-print_header();
+Print::print_header($ascii_header);
