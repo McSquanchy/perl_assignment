@@ -57,4 +57,12 @@ sub get_processed_filename($initialfile) {
         ->(localtime) . "-" . $initialfile;
 }
 
+package FilePaths;
+
+sub get_filename($path) {
+    use File::Basename;
+    my($filename, $dirs, $suffix) = fileparse($path);
+    return $filename;
+}
+
 1;
