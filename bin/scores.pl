@@ -29,7 +29,7 @@ state $ascii_header = q(
  \______/  \_______/ \______/ |__/       \_______/|_______/ 
                                                             
                                                             
-v0.1                                               10.09.2020
+v0.2                                               10.09.2020
                                        
 Created by Kevin Buman                                   
                                                              
@@ -122,15 +122,16 @@ state @master_parse;
 state %submissions;
 state @submission_filenames;
 
-
 Print::print_header($ascii_header);
 
 # Read flags and store values in the hash
-GetOptions( \%args, "master=s", "submissions=s{,}" => \@submission_filenames, "help!" )
-  or die( Args::error_args() );
+GetOptions(
+    \%args, "master=s",
+    "submissions=s{,}" => \@submission_filenames,
+    "help!"
+) or die( Args::error_args() );
 
 parse_args();
-
 
 Print::print_progress("Opening master\t\t$args{master}");
 
@@ -141,31 +142,30 @@ parse_submissions();
 
 # say scalar ($submissions{$submission_filenames[0]}->@*); -> Nr. of Questions
 
-# my @arr = map {$_->{question_and_answers}{question}{text}} $submissions{$submission_filenames[0]}->@*; -> get all questions of a submission
-
-
+# my @submission_questions = map {$_->{question_and_answers}{question}{text}} $submissions{$submission_filenames[0]}->@*; -> get all questions of a submission
 
 # show $submissions{$submission_filenames[0]}[0]{question_and_answers}{question}{text};
 # show $submissions{$submission_filenames[0]}->@*;
-show @arr;
 
 # show $submissions{$submission_filenames[0]};
 # foreach ($submissions{$submission_filenames[0]}->@*) {
 #     # show $_;
 #     say $_->{question_and_answers}{question}{text};
 # }
-# generate_results();
+
+validate_completeness();
 
 sub parse_master() {
     Print::print_progress("Parsing master");
 
     my $fh;
 
-    open ($fh, $args{master}) or die "error accessing file";
+    open( $fh, $args{master} ) or die "error accessing file";
 
-    my $exam_text = do { local $/; readline($fh)};
-    if ($exam_text =~ $master_parser) {
-        @master_parse =  grep($_->{question_and_answers}, $/{master}->{master_component}->@*);
+    my $exam_text = do { local $/; readline($fh) };
+    if ( $exam_text =~ $master_parser ) {
+        @master_parse = grep( $_->{question_and_answers},
+            $/{master}->{master_component}->@* );
     }
     else {
         die "not valid!!";
@@ -175,68 +175,103 @@ sub parse_master() {
 
 sub parse_submissions() {
     Print::print_progress("Parsing submissions");
-    for my $submission ($submission_filenames[0]) {
+    for my $submission (@submission_filenames) {
         my $fh;
 
-        open ($fh, $submission) or die "error accessing file";
+        open( $fh, $submission ) or die "error accessing file";
 
-        my $exam_text = do { local $/; readline($fh)};
-         if ($exam_text =~ $submission_parser) {
-            my @questions_and_answers = grep($_->{question_and_answers}, $/{exam_submission}->{exam_component}->@*);
+        my $exam_text = do { local $/; readline($fh) };
+        if ( $exam_text =~ $submission_parser ) {
+            my @questions_and_answers = grep( $_->{question_and_answers},
+                $/{exam_submission}->{exam_component}->@* );
             $submissions{$submission} = \@questions_and_answers;
-    }
-    else {
-        warn "not valid!!";
-    }
-    close($fh);
+        }
+        else {
+            warn "not valid!!";
+        }
+        close($fh);
     }
 }
 
-sub generate_results() {
+sub validate_completeness() {
     use Data::Show;
-    # my @test = $master{master}{master_component}->@*;
-    # show @test;
-    # foreach($master{master}{master_component}->@*) {
-    #     next if($_->{decoration});
-    #     print $_->{question_and_answers}{question}{text};
+
+    # show @master_parse;
+    my @master_questions =
+      map { $_->{question_and_answers}{question}{text} =~ s/^\s+|\s+$//gr }
+      @master_parse;
+    my @master_answers =
+      ( map { $_->{question_and_answers}{answer}->@* } @master_parse );
+    @master_answers = map { $_->{text} =~ s/^\s+|\s+$//gr } @master_answers;
+
+    # show @master_parse[0]->{question_and_answers}{question}{text};
+    for my $sub ( keys %submissions ) {
+        printf "%s:\n", FilePaths::get_filename($sub);
+        my $nr_of_questions = $submissions{$sub}->@*;
+        my @submission_questions =
+          map { $_->{question_and_answers}{question}{text} =~ s/^\s+|\s+$//gr }
+          $submissions{$sub}->@*;
+        my @submission_answers =
+          ( map { $_->{question_and_answers}{answer}->@* }
+              $submissions{$sub}->@* );
+        @submission_answers =
+          map { $_->{text} =~ s/^\s+|\s+$//gr } @submission_answers;
+
+        foreach (@master_questions) {
+            if ( !( $_ ~~ @submission_questions ) ) {
+                printf "\tmissing question: %s\n", $_ =~ s/\s{2,}/ /gr;
+            }
+        }
+
+        foreach (@master_answers) {
+            if ( !( $_ ~~ @submission_answers ) ) {
+                printf "\tmissing answer: %s\n", $_;
+            }
+        }
+        printf "\n";
+    }
+
+# my @test = $master{master}{master_component}->@*;
+# show @test;
+# foreach($master{master}{master_component}->@*) {
+#     next if($_->{decoration});
+#     print $_->{question_and_answers}{question}{text};
+# }
+# my @questions =  grep($_->{question_and_answers}, $master{master}{master_component}->@*);
+# print join "\n", $_->{question_and_answers}{question}{text} foreach (grep($_->{question_and_answers}, $master{master}{master_component}->@*));
+
+# show $submissions{$submission_filenames[0]}{exam_submission}{exam_component}->@*;
+# show $submissions{$submission_filenames[0]}{exam_submission}{exam_component};
+# use Hash::Diff qw(diff);
+# for my $sub(@submission_filenames) {
+#     my %diff = %{ diff (\$master{master}{master_component}, \$submissions{$sub}{exam_submission}{exam_component})};
+# # print join "n", grep($_->{question_and_answers}, $submissions{$sub}{exam_submission}{exam_component}->@*);
+# foreach (grep($_->{question_and_answers}, $submissions{$sub}{exam_submission}{exam_component}->@* )) {
+
+    #     # print $_->{question_and_answers}{question}{text};
+    #     push @questions, $_->{question_and_answers}{question}{text};
+
+#     if (scalar (grep($_->{checkbox} =~ /\[ [x,X] \]/x , $_->{question_and_answers}{answer}->@*)) == 1 && scalar ($_->{question_and_answers}{answer}->@*) == 5) {
+#         my $given_answer = (grep($_->{checkbox} =~ /\[ [x,X] \]/x, $_->{question_and_answers}{answer}->@*))[0]->{text};
+#         # my @master_questoin = (grep($_->{q_nr} eq ))
+#         my $qnr = $_->{question_and_answers}{question}{q_nr};
+#         my @correct_answer = grep($_->{question}{q_nr} eq $qnr, {$master{master}{master_component}{question_and_answers}{question}->@*);
+
+    #         # if
+    #         # for my $answer ($_->{question_and_answers}{answer}->@*) {
+    #         #     if ($answer->{checkbox} =~ /\[ [x,X] \]/x) {
+    #         #         say "correct";
+    #         #     }
+    #         # }
+    #     }
+
+    #     # say scalar ($_->{question_and_answers}{answer}->@*);
+    #     # show $_->{question_and_answers}{answer}->@*;
+    #     # say join "\n", @submission_questions;
     # }
-    # my @questions =  grep($_->{question_and_answers}, $master{master}{master_component}->@*);
-    # print join "\n", $_->{question_and_answers}{question}{text} foreach (grep($_->{question_and_answers}, $master{master}{master_component}->@*));
-   
-    # show $submissions{$submission_filenames[0]}{exam_submission}{exam_component}->@*;
-    # show $submissions{$submission_filenames[0]}{exam_submission}{exam_component};
-    # use Hash::Diff qw(diff);
-    # for my $sub(@submission_filenames) {
-    #     my %diff = %{ diff (\$master{master}{master_component}, \$submissions{$sub}{exam_submission}{exam_component})};
-        # # print join "n", grep($_->{question_and_answers}, $submissions{$sub}{exam_submission}{exam_component}->@*);
-        # foreach (grep($_->{question_and_answers}, $submissions{$sub}{exam_submission}{exam_component}->@* )) {
-
-        #     # print $_->{question_and_answers}{question}{text};
-        #     push @questions, $_->{question_and_answers}{question}{text};
-
-        #     if (scalar (grep($_->{checkbox} =~ /\[ [x,X] \]/x , $_->{question_and_answers}{answer}->@*)) == 1 && scalar ($_->{question_and_answers}{answer}->@*) == 5) {
-        #         my $given_answer = (grep($_->{checkbox} =~ /\[ [x,X] \]/x, $_->{question_and_answers}{answer}->@*))[0]->{text};
-        #         # my @master_questoin = (grep($_->{q_nr} eq ))
-        #         my $qnr = $_->{question_and_answers}{question}{q_nr};
-        #         my @correct_answer = grep($_->{question}{q_nr} eq $qnr, {$master{master}{master_component}{question_and_answers}{question}->@*);
-                
-        #         # if 
-        #         # for my $answer ($_->{question_and_answers}{answer}->@*) {
-        #         #     if ($answer->{checkbox} =~ /\[ [x,X] \]/x) {
-        #         #         say "correct";
-        #         #     }
-        #         # }
-        #     }
-
-        #     # say scalar ($_->{question_and_answers}{answer}->@*);
-        #     # show $_->{question_and_answers}{answer}->@*;
-        #     # say join "\n", @arr;
-        # }
-        # say join "\n", @questions;
+    # say join "\n", @questions;
 
     # };
-
-
 
     # for my $el ($master{master}{master_component}->@*) {
     #     # my @tst = keys $el->%*;
@@ -280,6 +315,7 @@ sub parse_args() {
     if ( !$args{master} ) {
         croak "No master file specified\n";
     }
+
     # check if master file doesn't exist or cannot be read
     elsif ( !-f $args{master} || !-r $args{master} ) {
         croak "The file $args{master} cannot be read\n";
