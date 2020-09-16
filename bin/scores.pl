@@ -141,20 +141,6 @@ Print::print_progress("Opening master\t\t$args{master}");
 
 parse_master();
 parse_submissions();
-
-# say scalar ($submissions{$submission_filenames[0]}->@*); -> Nr. of Questions
-
-# my @submission_questions = map {$_->{question_and_answers}{question}{text}} $submissions{$submission_filenames[0]}->@*; -> get all questions of a submission
-
-# show $submissions{$submission_filenames[0]}[0]{question_and_answers}{question}{text};
-# show $submissions{$submission_filenames[0]}->@*;
-
-# show $submissions{$submission_filenames[0]};
-# foreach ($submissions{$submission_filenames[0]}->@*) {
-#     # show $_;
-#     say $_->{question_and_answers}{question}{text};
-# }
-
 validate_completeness();
 
 grade_submissions();
@@ -200,7 +186,7 @@ sub parse_submissions() {
 
 sub validate_completeness() {
     Print::print_progress("Checking for completeness");   
-    # show @master_parse;
+
     my @master_questions =
       map { $_->{question_and_answers}{question}{text} =~ s/^\s+|\s+$//gr }
       @master_parse;
@@ -208,91 +194,12 @@ sub validate_completeness() {
       ( map { $_->{question_and_answers}{answer}->@* } @master_parse );
     @master_answers = map { $_->{text} =~ s/^\s+|\s+$//gr } @master_answers;
 
-    # show @master_parse[0]->{question_and_answers}{question}{text};
+
     for my $sub ( keys %submissions ) {
         printf "\n%s:\n", FilePaths::get_filename($sub);
         check_missing_q_a( $submissions{$sub} );
 
-       # my $nr_of_questions = $submissions{$sub}->@*;
-       # my @submission_questions =
-       #   map { $_->{question_and_answers}{question}{text} =~ s/^\s+|\s+$//gr }
-       #   $submissions{$sub}->@*;
-       # my @submission_answers =
-       #   ( map { $_->{question_and_answers}{answer}->@* }
-       #       $submissions{$sub}->@* );
-       # @submission_answers =
-       #   map { $_->{text} =~ s/^\s+|\s+$//gr } @submission_answers;
-
-        # foreach (@master_questions) {
-        #     if ( !( $_ ~~ @submission_questions ) ) {
-        #         printf "\tmissing question: %s\n", $_ =~ s/\s{2,}/ /gr;
-        #     }
-        # }
-
-        # foreach (@master_answers) {
-        #     if ( !( $_ ~~ @submission_answers ) ) {
-        #         printf "\tmissing answer: %s\n", $_;
-        #     }
-        # }
-        # printf "\n";
     }
-
-# my @test = $master{master}{master_component}->@*;
-# show @test;
-# foreach($master{master}{master_component}->@*) {
-#     next if($_->{decoration});
-#     print $_->{question_and_answers}{question}{text};
-# }
-# my @questions =  grep($_->{question_and_answers}, $master{master}{master_component}->@*);
-# print join "\n", $_->{question_and_answers}{question}{text} foreach (grep($_->{question_and_answers}, $master{master}{master_component}->@*));
-
-# show $submissions{$submission_filenames[0]}{exam_submission}{exam_component}->@*;
-# show $submissions{$submission_filenames[0]}{exam_submission}{exam_component};
-# use Hash::Diff qw(diff);
-# for my $sub(@submission_filenames) {
-#     my %diff = %{ diff (\$master{master}{master_component}, \$submissions{$sub}{exam_submission}{exam_component})};
-# # print join "n", grep($_->{question_and_answers}, $submissions{$sub}{exam_submission}{exam_component}->@*);
-# foreach (grep($_->{question_and_answers}, $submissions{$sub}{exam_submission}{exam_component}->@* )) {
-
-    #     # print $_->{question_and_answers}{question}{text};
-    #     push @questions, $_->{question_and_answers}{question}{text};
-
-#     if (scalar (grep($_->{checkbox} =~ /\[ [x,X] \]/x , $_->{question_and_answers}{answer}->@*)) == 1 && scalar ($_->{question_and_answers}{answer}->@*) == 5) {
-#         my $given_answer = (grep($_->{checkbox} =~ /\[ [x,X] \]/x, $_->{question_and_answers}{answer}->@*))[0]->{text};
-#         # my @master_questoin = (grep($_->{q_nr} eq ))
-#         my $qnr = $_->{question_and_answers}{question}{q_nr};
-#         my @correct_answer = grep($_->{question}{q_nr} eq $qnr, {$master{master}{master_component}{question_and_answers}{question}->@*);
-
-    #         # if
-    #         # for my $answer ($_->{question_and_answers}{answer}->@*) {
-    #         #     if ($answer->{checkbox} =~ /\[ [x,X] \]/x) {
-    #         #         say "correct";
-    #         #     }
-    #         # }
-    #     }
-
-    #     # say scalar ($_->{question_and_answers}{answer}->@*);
-    #     # show $_->{question_and_answers}{answer}->@*;
-    #     # say join "\n", @submission_questions;
-    # }
-    # say join "\n", @questions;
-
-    # };
-
-    # for my $el ($master{master}{master_component}->@*) {
-    #     # my @tst = keys $el->%*;
-    #     # say $tst[0];
-    #     if (! ((keys $el->%*)[0] eq "decoration")) {
-    #         while(my ($key, $value) = each $el->{question_and_answers}->%*) {
-    #             show $value;
-    #         }
-    #     };
-
-    # }
-    # foreach ($master{master}{master_component}->@*) {
-    #    use Data::Show;
-    #    print $_->{question_and_answers}{question}{q_nr};
-    # }
 }
 
 sub check_missing_q_a($submission) {
@@ -337,10 +244,6 @@ sub check_missing_q_a($submission) {
                       $answer =~ s/^\s+|\s+$//gr;
                 }
             }
-            # if ($missing) {
-            #     # printf "\n";
-            # }
-
         }
     }
 }
