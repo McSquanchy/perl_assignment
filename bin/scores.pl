@@ -250,18 +250,68 @@ sub check_missing_q_a($submission) {
 
 sub grade_submissions() {
     use Data::Show;
-    Print::print_progress("\n\nComputing scores");
+    Print::print_progress("\n\nComputing scores\n");
     for my $sub ( keys %submissions ) {
+        printf "%s", pad(Args::extract_filename($sub), 60, "r", ".", 1);
         my $nr_of_questions = uniq map { $_->{question_and_answers}{question}{text} } $submissions{$sub}->@*;
-        
+        my $correct_count = 0;
+        my @sub_array = uniq $submissions{$sub}->@*;
+        for my $entry(@sub_array) {
+            # show $entry;
+            # show @master_parse;
+            # show $entry;
+            my @correct_answer = grep $_->{checkbox} =~ / \[ [X,x] /x, $entry->{question_and_answers}{answer}->@*;
+            # show @correct_answer;
+            next if(scalar @correct_answer != 1);
+            # show @correct_answer;
+            # show  $entry->{question_and_answers}{question}{text};
+            # show @master_parse;
+            # next if ($#entry->{question_and_answers}{question}{text})
+            # show $entry->{question_and_answers}{question}{text};
+        # say $t;
+            # show $master_parse[0]->{question_and_answers}{question}{text};
+            my $match = (grep {trim($_->{question_and_answers}{question}{text}) eq trim($entry->{question_and_answers}{question}{text})} @master_parse)[0];
+            # print $match[0]->{question_and_answers}{answers}{text};
+            # show @match;
+            # @correct_answer = (grep $_->{checkbox} =~ / \[ [X,x]/, $match->{question_and_answers}{answer}->@*);
+            # show @correct_answer;
+            my $master_answer =  (grep $_->{checkbox} =~ / \[ [X,x] /x, $match->{question_and_answers}{answer}->@*)[0];
+
+            if (trim($correct_answer[0]->{text}) eq trim($master_answer->{text})) {
+                $correct_count++;
+            }
+            # if (scalar ($entry->{question_and_answers}{answer}->@*) == 
+        }
+        printf " %s/%s\n", pad($correct_count, 2, "l", "0", 1), pad($nr_of_questions, 2, "l", "0", 1);
     }
 }
 
 
 
+sub pad {
+    my ($text, $width, $which, $padchar, $is_trunc) = @_;
+    if ($which) {
+        $which = substr($which, 0, 1);
+    } else {
+        $which = "r";
+    }
+    $padchar //= " ";
 
-
-
+    my $w = length($text);
+    if ($is_trunc && $w > $width) {
+        $text = substr($text, 0, $width, 1);
+    } else {
+        if ($which eq 'l') {
+            $text = ($padchar x ($width-$w)) . $text;
+        } elsif ($which eq 'c') {
+            my $n = int(($width-$w)/2);
+            $text = ($padchar x $n) . $text . ($padchar x ($width-$w-$n));
+        } else {
+            $text .= ($padchar x ($width-$w));
+        }
+    }
+    $text;
+}
 
 
 
