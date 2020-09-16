@@ -5,11 +5,14 @@ use v5.32;
 use warnings;
 use diagnostics;
 use experimental 'signatures';
+use experimental 'smartmatch';
 use Carp;
 
 use Getopt::Long;
 use Try::Catch;
+use String::Util "trim";
 use List::Util 'shuffle';
+use List::MoreUtils qw(firstidx);
 use Regexp::Grammars;
 
 use lib "../lib/";
@@ -29,7 +32,7 @@ state $ascii_header = q(
  \______/  \_______/ \______/ |__/       \_______/|_______/ 
                                                             
                                                             
-v0.2                                               10.09.2020
+v0.3                                               16.09.2020
                                        
 Created by Kevin Buman                                   
                                                              
@@ -136,8 +139,6 @@ parse_args();
 Print::print_progress("Opening master\t\t$args{master}");
 
 parse_master();
-use Data::Show;
-
 parse_submissions();
 
 # say scalar ($submissions{$submission_filenames[0]}->@*); -> Nr. of Questions
@@ -154,6 +155,9 @@ parse_submissions();
 # }
 
 validate_completeness();
+
+grade_submissions();
+
 
 sub parse_master() {
     Print::print_progress("Parsing master");
@@ -194,8 +198,7 @@ sub parse_submissions() {
 }
 
 sub validate_completeness() {
-    use Data::Show;
-
+    Print::print_progress("Checking for completeness");   
     # show @master_parse;
     my @master_questions =
       map { $_->{question_and_answers}{question}{text} =~ s/^\s+|\s+$//gr }
@@ -206,29 +209,31 @@ sub validate_completeness() {
 
     # show @master_parse[0]->{question_and_answers}{question}{text};
     for my $sub ( keys %submissions ) {
-        printf "%s:\n", FilePaths::get_filename($sub);
-        my $nr_of_questions = $submissions{$sub}->@*;
-        my @submission_questions =
-          map { $_->{question_and_answers}{question}{text} =~ s/^\s+|\s+$//gr }
-          $submissions{$sub}->@*;
-        my @submission_answers =
-          ( map { $_->{question_and_answers}{answer}->@* }
-              $submissions{$sub}->@* );
-        @submission_answers =
-          map { $_->{text} =~ s/^\s+|\s+$//gr } @submission_answers;
+        printf "\n%s:\n", FilePaths::get_filename($sub);
+        check_missing_q_a( $submissions{$sub} );
 
-        foreach (@master_questions) {
-            if ( !( $_ ~~ @submission_questions ) ) {
-                printf "\tmissing question: %s\n", $_ =~ s/\s{2,}/ /gr;
-            }
-        }
+       # my $nr_of_questions = $submissions{$sub}->@*;
+       # my @submission_questions =
+       #   map { $_->{question_and_answers}{question}{text} =~ s/^\s+|\s+$//gr }
+       #   $submissions{$sub}->@*;
+       # my @submission_answers =
+       #   ( map { $_->{question_and_answers}{answer}->@* }
+       #       $submissions{$sub}->@* );
+       # @submission_answers =
+       #   map { $_->{text} =~ s/^\s+|\s+$//gr } @submission_answers;
 
-        foreach (@master_answers) {
-            if ( !( $_ ~~ @submission_answers ) ) {
-                printf "\tmissing answer: %s\n", $_;
-            }
-        }
-        printf "\n";
+        # foreach (@master_questions) {
+        #     if ( !( $_ ~~ @submission_questions ) ) {
+        #         printf "\tmissing question: %s\n", $_ =~ s/\s{2,}/ /gr;
+        #     }
+        # }
+
+        # foreach (@master_answers) {
+        #     if ( !( $_ ~~ @submission_answers ) ) {
+        #         printf "\tmissing answer: %s\n", $_;
+        #     }
+        # }
+        # printf "\n";
     }
 
 # my @test = $master{master}{master_component}->@*;
@@ -288,6 +293,68 @@ sub validate_completeness() {
     #    print $_->{question_and_answers}{question}{q_nr};
     # }
 }
+
+sub check_missing_q_a($submission) {
+    my @submission_questions =
+      map { $_->{question_and_answers}{question}{text} } $submission->@*;
+
+    for ( 0 .. $#master_parse ) {
+        my $cnt            = $_;
+        my @master_answers = map { $_->{text} }
+          $master_parse[$cnt]->{question_and_answers}{answer}->@*;
+        my ($missing_question) =
+          $master_parse[$cnt]->{question_and_answers}{question}{text} =~
+          s/^\s+|\s+$//gr;
+        my $i = firstidx {
+            $_ eq $master_parse[$cnt]->{question_and_answers}{question}{text}
+        }
+        @submission_questions;
+        if ( $i < 0 ) {
+            printf "\tmissing question: %s\n",
+              $missing_question =~ s/\s{2,}/ /gr;
+
+           # for my $answer(@master_answers) {
+           #     printf "\t\tmissing answer: %s\n", $answer =~ s/^\s+|\s+$//gr ;
+           # }
+           # printf "\n";
+        }
+        else {
+            my $missing       = undef;
+            my @given_answers = map { $_->{text} }
+              $submission->[$i]->{question_and_answers}{answer}->@*;
+
+            for my $answer (@master_answers) {
+                if ( !( $answer ~~ @given_answers ) ) {
+                    if ( !$missing ) {
+                        printf "\tquestion: %s\n",
+                          $missing_question =~ s/\s{2,}/ /gr;
+                        $missing = 1;
+                    }
+                    printf "\t\tmissing answer: %s\n",
+                      $answer =~ s/^\s+|\s+$//gr;
+                }
+            }
+            if ($missing) {
+                printf "\n";
+            }
+
+        }
+    }
+}
+
+sub grade_submissions() {
+    Print::print_progress("\n\nComputing scores");   
+}
+
+
+
+
+
+
+
+
+
+
 
 sub usage {
     print
