@@ -13,6 +13,7 @@ use Try::Catch;
 use String::Util "trim";
 use List::Util 'shuffle';
 use List::MoreUtils qw(firstidx);
+use List::MoreUtils qw(uniq);
 use Regexp::Grammars;
 
 use lib "../lib/";
@@ -310,7 +311,8 @@ sub check_missing_q_a($submission) {
         }
         @submission_questions;
         if ( $i < 0 ) {
-            printf "\tmissing question: %s\n",
+            printf "\tmissing question: %s %s\n",
+            $master_parse[$cnt]->{question_and_answers}{question}{q_nr},
               $missing_question =~ s/\s{2,}/ /gr;
 
            # for my $answer(@master_answers) {
@@ -326,7 +328,8 @@ sub check_missing_q_a($submission) {
             for my $answer (@master_answers) {
                 if ( !( $answer ~~ @given_answers ) ) {
                     if ( !$missing ) {
-                        printf "\tquestion: %s\n",
+                        printf "\tquestion: %s %s\n",
+                        $submission->[$i]->{question_and_answers}{question}{q_nr},
                           $missing_question =~ s/\s{2,}/ /gr;
                         $missing = 1;
                     }
@@ -334,16 +337,21 @@ sub check_missing_q_a($submission) {
                       $answer =~ s/^\s+|\s+$//gr;
                 }
             }
-            if ($missing) {
-                printf "\n";
-            }
+            # if ($missing) {
+            #     # printf "\n";
+            # }
 
         }
     }
 }
 
 sub grade_submissions() {
-    Print::print_progress("\n\nComputing scores");   
+    use Data::Show;
+    Print::print_progress("\n\nComputing scores");
+    for my $sub ( keys %submissions ) {
+        my $nr_of_questions = uniq map { $_->{question_and_answers}{question}{text} } $submissions{$sub}->@*;
+        
+    }
 }
 
 
