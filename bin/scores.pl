@@ -142,8 +142,18 @@ Print::print_progress("Opening master\t\t$args{master}");
 parse_master();
 parse_submissions();
 validate_completeness();
-
 grade_submissions();
+use Data::Show;
+
+# my $test = trim(qq(perl's          three main types of call context (or "amount context") are:));
+# $test =~ s/\s* {2,} / /;
+# show lc($test);
+
+# my $test2 = 'If the array @x contains four elements,
+#     how many elements will be in the list (1, @x, 2)?';
+# $test2 =~ s/\s* {2,} / /;
+# show lc($test2);
+
 
 
 sub parse_master() {
@@ -222,10 +232,6 @@ sub check_missing_q_a($submission) {
             $master_parse[$cnt]->{question_and_answers}{question}{q_nr},
               $missing_question =~ s/\s{2,}/ /gr;
 
-           # for my $answer(@master_answers) {
-           #     printf "\t\tmissing answer: %s\n", $answer =~ s/^\s+|\s+$//gr ;
-           # }
-           # printf "\n";
         }
         else {
             my $missing       = undef;
@@ -257,35 +263,25 @@ sub grade_submissions() {
         my $correct_count = 0;
         my @sub_array = uniq $submissions{$sub}->@*;
         for my $entry(@sub_array) {
-            # show $entry;
-            # show @master_parse;
-            # show $entry;
+  
             my @correct_answer = grep $_->{checkbox} =~ / \[ [X,x] /x, $entry->{question_and_answers}{answer}->@*;
-            # show @correct_answer;
+ 
             next if(scalar @correct_answer != 1);
-            # show @correct_answer;
-            # show  $entry->{question_and_answers}{question}{text};
-            # show @master_parse;
-            # next if ($#entry->{question_and_answers}{question}{text})
-            # show $entry->{question_and_answers}{question}{text};
-        # say $t;
-            # show $master_parse[0]->{question_and_answers}{question}{text};
-            my $match = (grep {trim($_->{question_and_answers}{question}{text}) eq trim($entry->{question_and_answers}{question}{text})} @master_parse)[0];
-            # print $match[0]->{question_and_answers}{answers}{text};
-            # show @match;
-            # @correct_answer = (grep $_->{checkbox} =~ / \[ [X,x]/, $match->{question_and_answers}{answer}->@*);
-            # show @correct_answer;
+    
+            my $match = (grep {lc(trim($_->{question_and_answers}{question}{text} =~ s/\s* {2,} / /)) eq lc(trim($entry->{question_and_answers}{question}{text} =~ s/\s* {2,} / /))} @master_parse)[0];
+
+            show $match;
+   
             my $master_answer =  (grep $_->{checkbox} =~ / \[ [X,x] /x, $match->{question_and_answers}{answer}->@*)[0];
 
             if (trim($correct_answer[0]->{text}) eq trim($master_answer->{text})) {
                 $correct_count++;
             }
-            # if (scalar ($entry->{question_and_answers}{answer}->@*) == 
+
         }
         printf " %s/%s\n", pad($correct_count, 2, "l", "0", 1), pad($nr_of_questions, 2, "l", "0", 1);
     }
 }
-
 
 
 sub pad {
