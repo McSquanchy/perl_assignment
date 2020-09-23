@@ -38,7 +38,7 @@ state $ascii_header = q(
  \______/  \_______/ \______/ |__/       \_______/|_______/ 
                                                             
                                                             
-v0.8                                               16.09.2020
+v0.9                                               16.09.2020
                                        
 Created by Kevin Buman                                   
                                                              
@@ -86,6 +86,7 @@ my $master_parser = qr {
 
 };
 
+# grammer for parsing the submitted files
 my $submission_parser = qr{
 
     <exam_submission>
@@ -127,12 +128,21 @@ my $submission_parser = qr{
 
 };
 
+# holds program arguments
 state %args;
+
+# holds the parsed master exam file
 state @master_parse;
+
+# holds the parsed exam files
 state %submissions;
+
+# contains filenames provided via the shell
 state @submission_filenames;
 
+# holds gathered statistics
 state %statistics;
+state %overall;
 
 # Print the ascii art to the console
 Print::print_header($ascii_header);
@@ -152,10 +162,9 @@ Print::print_progress("Opening master\t\t$args{master}");
 parse_master();
 parse_submissions();
 validate_completeness();
-
-# show %statistics;
 print_results();
 gather_statistics();
+# show %overall;
 find_cheaters();
 
 
@@ -215,14 +224,15 @@ sub check_validity($submission) {
     my @submission_questions = map { $_->{question_and_answers}{question}{text} } $submissions{$submission}->@*;
 
     # create statistics entry for current submission
-    $statistics{$submission} = {nr_answers => 0, nr_correct_answers => 0, nr_total_answers => 0, nr_of_questions => 0, given_answers_pattern => [], missing_answers_pattern => [], missing_questions_pattern => []};
-
+    $statistics{$submission} = {nr_answers => 0, nr_correct_questions => 0, nr_total_answers => 0, nr_of_questions => 0, given_answers_pattern => [], missing_answers_pattern => [], missing_questions_pattern => [], given_wrong_answers_pattern => [], given_correct_answers => []};
+    
     for ( 0 .. $#master_parse ) {
+
         # create iterator variable
         my $iterator = $_;
         my $question_already_printed;
         # check if master question is contained in submission questions
-        my @match = grep {evalute_match(normalize_string($master_parse[$iterator]->{question_and_answers}{question}{text}),$_)} 
+        my @match = grep {evalute_match(lc($master_parse[$iterator]->{question_and_answers}{question}{text}),$_)} 
                     @submission_questions;
 
         # if there's a match
@@ -250,7 +260,7 @@ sub check_validity($submission) {
                 #set missing so prints will look nice
                 $missing = 1;
             }
-            # show $submission_matched_question;
+
             my @submission_answers = $submission_matched_question->{question_and_answers}{answer}->@*;
 
             # my @submission_marked_answers = grep {$_->{checkbox} =~ /\[ \s* . \s* \]/x} @submission_answers;
@@ -261,14 +271,30 @@ sub check_validity($submission) {
             # check all answers
             for my $master_answer (@master_answers) {
                 $iter++;
-
-                my @answer_match = grep {evalute_match(normalize_string($master_answer->{text}), normalize_string($_->{text}))} 
+                my $current_q = join ".", $iterator+1, $iter;
+                if(!exists $overall{$current_q}) {
+                    $overall{$current_q} = {answered => 0};
+                    
+                    }
+                my @answer_match = grep {evalute_match(lc($master_answer->{text}), lc($_->{text}))} 
                     @submission_answers;
+                if(scalar @answer_match > 1) {
+                    my $min_edistance = 50000;
+                    my $match;
+                    for (@answer_match) {
+                      if (edistance(lc($master_answer->{text}), lc($_->{text})) < $min_edistance) {
+                          $min_edistance = edistance(lc($master_answer->{text}), lc($_->{text}));
+                          $match = $_;
+                      }
+                    }
+                    @answer_match = ();
+                    $answer_match[0] = $match;
+                }
                 if(@answer_match) {
                     $statistics{$submission}{nr_total_answers}++;
-
-                    my ($m, $closest_match) = evalute_match(normalize_string($master_answer->{text}), normalize_string($answer_match[0]->{text}));
-                    if (!($closest_match eq normalize_string($master_answer->{text}))) {
+                    # show @answer_match;
+                    my ($m, $closest_match) = evalute_match(lc($master_answer->{text}), lc($answer_match[0]->{text}));
+                    if (!($closest_match eq lc($master_answer->{text}))) {
                         if(!$missing) {
                         printf "\tquestion %s:\t%s\n", $master_parse[$iterator]->{question_and_answers}{question}{q_nr}, $master_parse[$iterator]->{question_and_answers}{question}{text};
                         printf "\t\tmissing answer: %s\n", $master_answer->{text};
@@ -276,16 +302,26 @@ sub check_validity($submission) {
                         $missing = 1;
                         }
                     }
-                    if ($answer_match[0]->{checkbox} =~ /\[ \s* . \s* \]/x) {
-                        push $statistics{$submission}{given_answers_pattern}->@*, 1;     
-                    }
-                    else {
-                        push $statistics{$submission}{given_answers_pattern}->@*, 0;     
-                    }
+                    # if ($answer_match[0]->{checkbox} =~ /\[ \s* \S \s* \]/x) {
+                    #     push $statistics{$submission}{given_answers_pattern}->@*, 1;     
+                    # }
+                    # else {
+                    #     push $statistics{$submission}{given_answers_pattern}->@*, 0;     
+                    # }
                     
                     if(($master_answer->{checkbox} =~ /\[ \s* \S \s* \]/x) && ($answer_match[0]->{checkbox} =~ /\[ \s* \S \s* \]/x) && scalar (grep {$_->{checkbox} =~ /\[ \s* \S \s* \]/x} @submission_answers) == 1) {
-                        $statistics{$submission}{nr_correct_answers}++;     
+                        $statistics{$submission}{nr_correct_questions}++;
+                        push $statistics{$submission}{given_correct_answers_pattern}->@*, $iterator+1;
+                        $overall{$current_q}{answered}++;
+                        # push $statistics{$submission}{given_wrong_answers_pattern}->@*, 0;
                     }
+                    elsif (!($master_answer->{checkbox} =~ /\[ \s* \S \s* \]/x) && $answer_match[0]->{checkbox} =~ /\[ \s* \S \s* \]/x) {
+                        push $statistics{$submission}{given_wrong_answers_pattern}->@*, $current_q;
+                        $overall{$current_q}{answered}++;
+                    }
+                    # else {
+                    #     # push $statistics{$submission}{given_wrong_answers_pattern}->@*, 0;
+                    # }
 
                 }
                 else {
@@ -300,7 +336,7 @@ sub check_validity($submission) {
                     }
 
                     # push the missing answer to statistics in the form "q_nr.a_index"
-                    push $statistics{$submission}{missing_answers_pattern}->@*, join ".", $iterator+1, $iter;     
+                    push $statistics{$submission}{missing_answers_pattern}->@*, $current_q;     
                 }
             }
 
@@ -411,7 +447,7 @@ sub print_results() {
     Print::print_progress("\n\nResults:");
 
     for my $key (keys %statistics) {
-        printf "%s%s/%s\n", pad( Args::extract_filename($key), 60, "r", ".", 1 ), pad( $statistics{$key}->{nr_correct_answers}, 2, "l", "0", 1 ), pad( $statistics{$key}->{nr_of_questions}, 2, "l", "0", 1 );
+        printf "%s%s/%s\n", pad( Args::extract_filename($key), 60, "r", ".", 1 ), pad( $statistics{$key}->{nr_correct_questions}, 2, "l", "0", 1 ), pad( $statistics{$key}->{nr_of_questions}, 2, "l", "0", 1 );
     }
 }
 
@@ -419,11 +455,12 @@ sub gather_statistics() {
        Print::print_progress("\n\nStatistics:");
     #    show values %statistics;
     
-    # my @correctly_answered = map {$_->{nr_correct_answers}} values %statistics;
+    # my @correctly_answered = map {$_->{nr_correct_questions}} values %statistics;
     # my @total_answered = map {$_->{nr_answers}} values %statistics;
-    my $mean_correctly = mean(map {$_->{nr_correct_answers}} values %statistics);
-    my $min_correctly = min(map {$_->{nr_correct_answers}} values %statistics);
-    my $max_correctly = max(map {$_->{nr_correct_answers}} values %statistics);
+    my $mean_correctly = mean(map {$_->{nr_correct_questions}} values %statistics);
+    my $min_correctly = min(map {$_->{nr_correct_questions}} values %statistics);
+    my $max_correctly = max(map {$_->{nr_correct_questions}} values %statistics);
+    my $stddev = stddev(map {$_->{nr_correct_questions}} values %statistics);
 
     my $mean_answered = mean(map {$_->{nr_answers}} values %statistics);
     my $min_answered = min(map {$_->{nr_answers}} values %statistics);
@@ -445,33 +482,55 @@ sub gather_statistics() {
         pad("".$mean_correctly, 2, "l", "0", 1),
         pad("Minimum....", 60, "l", " ", 1),
         pad("".$min_correctly, 2, "l", "0", 1),
-        ((scalar(grep {$_ == $min_correctly} map {$_->{nr_correct_answers}} values %statistics)) == 1 ? join " ", (scalar(grep {$_ == $min_correctly} map {$_->{nr_correct_answers}} values %statistics)),  "student" : join " ", (scalar(grep {$_ == $min_correctly} map {$_->{nr_correct_answers}} values %statistics)), "students"),
+        ((scalar(grep {$_ == $min_correctly} map {$_->{nr_correct_questions}} values %statistics)) == 1 ? join " ", (scalar(grep {$_ == $min_correctly} map {$_->{nr_correct_questions}} values %statistics)),  "student" : join " ", (scalar(grep {$_ == $min_correctly} map {$_->{nr_correct_questions}} values %statistics)), "students"),
         pad("Maximum....", 60, "l", " ", 1),
         pad("".$max_correctly, 2, "l", "0", 1),
-        ((scalar(grep {$_ == $max_correctly} map {$_->{nr_correct_answers}} values %statistics)) == 1 ? join " ", (scalar(grep {$_ == $max_correctly} map {$_->{nr_correct_answers}} values %statistics)),  "student" : join " ", (scalar(grep {$_ == $max_correctly} map {$_->{nr_correct_answers}} values %statistics)), "students");
+        ((scalar(grep {$_ == $max_correctly} map {$_->{nr_correct_questions}} values %statistics)) == 1 ? join " ", (scalar(grep {$_ == $max_correctly} map {$_->{nr_correct_questions}} values %statistics)),  "student" : join " ", (scalar(grep {$_ == $max_correctly} map {$_->{nr_correct_questions}} values %statistics)), "students");
 
     printf "%s:\n", "Results below expectation";
     for my $entry ( keys %statistics) {
-        if (($statistics{$entry}->{nr_correct_answers} /  scalar @master_parse) < 0.3) {
-            printf "\t%s %s/%s (score < 30%s)\n",  pad(Args::extract_filename($entry), 60, "r",".",1), pad("".($statistics{$entry}->{nr_correct_answers}), 2, "l", "0", 1), pad("".(scalar @master_parse), 2, "l", "0", 1), "%";
+        if ($statistics{$entry}->{nr_correct_questions} < ($mean_correctly - $stddev)) {
+            printf "\t%s %s/%s (score > 1 stddev below mean)\n",  pad(Args::extract_filename($entry), 60, "r",".",1), pad("".($statistics{$entry}->{nr_correct_questions}), 2, "l", "0", 1), pad("".($statistics{$entry}->{nr_of_questions}), 2, "l", "0", 1);
         }
     }
     printf "\n\n";
 }
 
 sub find_cheaters() {
-    # $c = Statistics::RankCorrelation->new( $x, $y, sorted => 1 );
+    Print::print_progress("\n\nPotential collusions:\n");
+    my @already_done;
     for my $key (keys %statistics) {
+  
         # my @pattern = $statistics{$key}->{given_answers_pattern};
+        # show $statistics{$key}->{given_wrong_answers_pattern};
+        # show $statistics{$key}->{given_correct_answers_pattern};
         for my $comparater (keys %statistics) {
-            if(!($key eq $comparater)) {
-                # my @comparer = $statistics{$comparater}->{given_answers_pattern};
-                my $diff = Array::Diff->diff($statistics{$key}->{given_answers_pattern}, $statistics{$comparater}->{given_answers_pattern});
-                show $diff->count;
-                # my $c = Statistics::RankCorrelation->new( $statistics{$key}->{given_answers_pattern}, $statistics{$comparater}->{given_answers_pattern}, sorted => 0 );
+            if(!($key eq $comparater) and !($comparater ~~ @already_done)) {
+                my @same_correct_answers;
+                for ($statistics{$key}->{given_correct_answers_pattern}->@*) {
+                    if ($_ ~~ $statistics{$comparater}->{given_correct_answers_pattern}->@*) {
+                        push @same_correct_answers, $_;
+                    }
+                }
+                my @same_false_answers;
+                for ($statistics{$key}->{given_wrong_answers_pattern}->@*) {
+                    if ($_ ~~ $statistics{$comparater}->{given_wrong_answers_pattern}->@*) {
+                        push @same_false_answers, $_;
+                    }
+                }
+                if(scalar @same_false_answers > 4) {
+                    printf "\t\t%s\n\tand\t%s %.2f\n", Args::extract_filename($key), pad(Args::extract_filename($comparater), 60, "r", ".", 1), (scalar @same_false_answers / (scalar @same_false_answers + scalar @same_correct_answers));
+                }
+                # show @same_false_answers;
+
+        #     #     # my @comparer = $statistics{$comparater}->{given_answers_pattern};
+        #     #     # my $diff = Array::Diff->diff($statistics{$key}->{given_answers_pattern}, $statistics{$comparater}->{given_answers_pattern});
+        #     #     # show $diff->count;
+        #     #     # my $c = Statistics::RankCorrelation->new( $statistics{$key}->{given_answers_pattern}, $statistics{$comparater}->{given_answers_pattern}, sorted => 0 );
 
             }
         }
+        push @already_done, $key;
     }
 }
 
@@ -626,10 +685,6 @@ sub pad {
     $text;
 }
 
-sub normalize_string($str) {
-    lc($str);
-}
-
 sub sanitize_questions($arr) {
     for my $val ( $arr->@* ) {
         $val->{question_and_answers}{question}{text} =
@@ -655,6 +710,7 @@ sub usage {
 
 sub validate_args() {
 
+    # display usage if no args supplied
     if ( scalar( keys %args ) == 0 ) {
         usage();
         exit(0);
