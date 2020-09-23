@@ -1,0 +1,15 @@
+# APPROACH
+
+1. Read in Master
+2. Read in Submissions
+
+3. for each submission:
+    for each master question:
+        if submission contains question:
+            if submission contains all answers:
+                evalute
+            else:
+                print missing answers
+                evaluate
+        else:
+            print missing question
