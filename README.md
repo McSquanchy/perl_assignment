@@ -12,6 +12,10 @@ Dr. Damian Conway
 
 ## Documentation
 
+## Environment
+
+The following programs were written and tested on vagrant running an "ubuntu/trusty64" box. In addition, all code was also tested and run on version 5.1.7 of elementary OS. In order to run the programs, perl v5.32.0 is **required**.
+
 ### Assignment 1
 
 #### Description of the task
@@ -86,7 +90,7 @@ The program provides basic error handling. An error will be thrown when
 
 #### Known Issues
 
-There appears to be an issue with either the module `Tie::File` or with windows/unix file formats. Using `Tie::File` seems to add a blank line at the end every file accessed. I didn't address this, but if it's really an issue, simply delete the last line in both files after the program executed.
+There appears to be an issue with either the module `Tie::File` or with Windows/Unix file formats. Using `Tie::File` seems to add a blank line at the end every file accessed. I didn't address this, but if it's really an issue, simply delete the last line in both files after the program executed.
 
 #### Tests
 
@@ -140,7 +144,7 @@ For each pair of students, I count how many answers they have answered the same.
 $$
 p = \frac{nr. \ wrong \ answers}{nr. \ same \ answers}.
 $$
-Without further statistical analysis, I simply chose to report the pairs where $p >= 0.3$. As an example, let's say the exam has 20 questions with each 5 possible answers, 1 of which is correct. If two students answered 14 questions correctly,  and also answered the other questions in the same way, then $p = \frac{6}{20} = 0.3$. 
+Without further statistical analysis, I simply chose to report the pairs where $nr. \ wrong \ answers > 3$ and  $p >= 0.3$. As an example, let's say the exam has 20 questions with each 5 possible answers, 1 of which is correct. If two students answered 14 questions correctly,  and also answered the other questions in the same way, then $p = \frac{6}{20} = 0.3$. 
 
 This calculation makes the assumption that every answer  is equally likely to be chosen. Naturally, this is not true. However, for smaller classes of students (30-50), I've found that it's quite hard to find a good estimate, since many answers have never been chosen and it makes not much sense to assume a zero probability for some of the answers.
 
@@ -162,5 +166,4 @@ I provide a few test files in `test/scores/`. For most test cases, simply provid
 
 #### Discussion
 
-The program provided works reliably for most of the exams. If a student response matches the master, apart from marked answers, exactly, then the score is absolutely trustworthy. However, one is best advised to not solely rely on this program to score a multiple choice exam. Using '[', ']' characters or numbers in a clever way might allow certain individuals to manipulate the scoring procedure in order to achieve a more favorable score. Especially for small number of exams (<30), it might be best to give each file a quick glance and check whether the layout has changed in any significant way.
-
+The program provided works reliably for most of the exams. If a student response matches the master,apart from marked answers, then the score is absolutely trustworthy. However, one is best advised to not solely rely on this program to score a multiple choice exam. Using '[', ']' characters or numbers in a clever way might allow certain individuals to manipulate the scoring procedure in order to achieve a more favorable score. Especially for small number of exams (<30), it might be best to give each file a quick glance and check whether the layout has changed in any significant way.

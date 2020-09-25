@@ -204,7 +204,7 @@ sub parse_submissions() {
 
         # parse file
         my $exam_text = do { local $/; readline($fh) };
-        
+
         # store in hash
         if ( $exam_text =~ $submission_parser ) {
             my @questions_and_answers = grep( $_->{question_and_answers},
@@ -223,7 +223,7 @@ sub parse_submissions() {
 # prints each filename and calls check_validity()
 sub validate_completeness() {
     Print::print_progress("Checking for completeness");
-    
+
     # iterate over each exam parsed
     for my $sub ( keys %submissions ) {
         printf "\n%s:\n", FilePaths::get_filename($sub);
@@ -293,7 +293,7 @@ sub check_validity($submission) {
                     $_->{question_and_answers}{question}{text} eq $closest_match
                 } $submissions{$submission}->@*
             )[0];
-            
+
             # check if the student has answered the question
             if (
                 scalar(
@@ -327,7 +327,7 @@ sub check_validity($submission) {
             # array with all the submitted answers
             my @submission_answers =
               $submission_matched_question->{question_and_answers}{answer}->@*;
-            
+
             # array with all answers for this question in the master
             my @master_answers =
               $master_parse[$iterator]->{question_and_answers}{answer}->@*;
@@ -339,20 +339,21 @@ sub check_validity($submission) {
             for my $master_answer (@master_answers) {
                 $iter++;
 
-                # current question.answer (eg 16.2 -> for printing and storing in statistics)
+   # current question.answer (eg 16.2 -> for printing and storing in statistics)
                 my $current_q = join ".", $iterator + 1, $iter;
 
-                # find the correct answer, either by matching exactly or by closest match
+       # find the correct answer, either by matching exactly or by closest match
                 my @answer_match = grep {
                     evalute_match( lc( $master_answer->{text} ),
                         lc( $_->{text} ) )
                 } @submission_answers;
 
-                # if there is more than one answer, chose the one with the smalles levenshtein distance
+# if there is more than one answer, chose the one with the smalles levenshtein distance
                 if ( scalar @answer_match > 1 ) {
-                    my $min_edistance = 10; # initialize at unrealistically high level
+                    my $min_edistance =
+                      10;    # initialize at unrealistically high level
                     my $match;
-                    
+
                     # find minimum
                     for (@answer_match) {
                         if (
@@ -378,12 +379,12 @@ sub check_validity($submission) {
                     # update statistics
                     $statistics{$submission}{nr_total_answers}++;
 
-                    # find closest match and either print directly or treat according to extension 1
+# find closest match and either print directly or treat according to extension 1
                     my ( $m, $closest_match ) = evalute_match(
                         lc( $master_answer->{text} ),
                         lc( $answer_match[0]->{text} )
                     );
-                    
+
                     if ( !( $closest_match eq lc( $master_answer->{text} ) ) ) {
                         if ( !$missing ) {
                             printf "\tquestion %s:\t%s\n",
@@ -398,7 +399,7 @@ sub check_validity($submission) {
                         }
                         else {
                             printf "\t\tmissing answer: %s\n",
-                            $master_answer->{text};
+                              $master_answer->{text};
                             printf "\t\tuse instead:\t%s\n", $closest_match;
                         }
                     }
@@ -422,7 +423,8 @@ sub check_validity($submission) {
                     elsif (
                         # checked wrong answer
                         !( $master_answer->{checkbox} =~ /\[ \s* \S \s* \]/x )
-                        && $answer_match[0]->{checkbox} =~ /\[ \s* \S \s* \]/x )
+                        && $answer_match[0]->{checkbox} =~ /\[ \s* \S \s* \]/x
+                      )
                     {
                         push $statistics{$submission}
                           {given_wrong_answers_pattern}->@*, $current_q;
@@ -446,7 +448,7 @@ sub check_validity($submission) {
                           $master_answer->{text};
                     }
 
-                    # push the missing answer to statistics in the form "q_nr.a_index"
+              # push the missing answer to statistics in the form "q_nr.a_index"
                     push $statistics{$submission}{missing_answers_pattern}->@*,
                       $current_q;
                 }
@@ -496,7 +498,7 @@ sub gather_statistics() {
     my $mean_answered = mean( map { $_->{nr_answers} } values %statistics );
     my $min_answered  = min( map  { $_->{nr_answers} } values %statistics );
     my $max_answered  = max( map  { $_->{nr_answers} } values %statistics );
-    
+
     # print out results
 
     printf "%s %s\n%s %s (%s)\n%s %s (%s)\n\n",
@@ -646,19 +648,23 @@ sub find_cheaters() {
                         push @same_false_answers, $_;
                     }
                 }
-                if(scalar @same_false_answers > 3 ){
-                    my $probability_of_cheating = scalar @same_false_answers / (scalar @same_false_answers + scalar @same_correct_answers );
+                if ( scalar @same_false_answers > 3 ) {
+                    my $probability_of_cheating =
+                      scalar @same_false_answers /
+                      (
+                        scalar @same_false_answers +
+                          scalar @same_correct_answers );
                     if ( $probability_of_cheating >= 0.3 ) {
                         printf "\t\t%s\n\tand\t%s %.2f\n",
-                        Args::extract_filename($key),
-                        pad( Args::extract_filename($comparater),
+                          Args::extract_filename($key),
+                          pad( Args::extract_filename($comparater),
                             60, "r", ".", 1 ),
-                        (
+                          (
                             scalar @same_false_answers / (
                                 scalar @same_false_answers +
-                                scalar @same_correct_answers
+                                  scalar @same_correct_answers
                             )
-                        );
+                          );
                     }
                 }
 
