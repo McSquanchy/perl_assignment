@@ -9,7 +9,6 @@ use experimental 'smartmatch';
 use Carp;
 
 use Getopt::Long;
-use Try::Catch;
 use String::Util "trim";
 use List::Util qw( min max );
 use List::MoreUtils qw(firstidx);
