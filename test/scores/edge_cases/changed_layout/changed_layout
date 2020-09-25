@@ -1,17 +1,4 @@
-Complete this exam by placing an 'X' in the box beside each correct
-answer, like so:
-
-    [ ] This is not the correct answer
-    [ ] This is not the correct answer either
-    [ ] This is an incorrect answer
-    [X] This is the correct answer
-    [ ] This is an irrelevant answer
-
-Scoring: Each question is worth 2 points.
-         Final score will be: SUM / 10
-
-Warning: Each question has only one correct answer. Answers to questions
-         for which two or more boxes are marked with an 'X' will be scored as zero.
+In this file, the layout has changed compared to the master. 
 
 ________________________________________________________________________________
 
@@ -24,39 +11,51 @@ ________________________________________________________________________________
     [ ] Random chance
 
 ________________________________________________________________________________
+________________________________________________________________________________
+________________________________________________________________________________
+________________________________________________________________________________
 
 
 2. Perl's three main types of call context (or "amount context") are:
 
     [X] List, scalar, and void
     [ ] List, linear, and void
+
+
+
     [ ] List, scalar, and null
+
+
     [ ] Null, scalar, and void
     [ ] Blood, sweat, and tears
+________________________________________________________________________________
 
 ________________________________________________________________________________
+
 
 
 3. The "default variable" (or "topic variable") is:
 
     [ ] $_
+
     [X] @_
     [ ] $$
+
     [ ] $=
     [ ] The last variable that was successfully assigned to
 
-________________________________________________________________________________
 
 
 4. You can access the command-line arguments of a Perl program via:
 
     [X] @ARGV
     [ ] $ARGV
-    [ ] @ARGS
-    [ ] @ARG
-    [ ] @_
 
-________________________________________________________________________________
+    [ ] @ARGS
+
+    [ ] @ARG
+
+    [ ] @_
 
 
 5. The main repository for Open Source Perl modules is:
@@ -67,9 +66,6 @@ ________________________________________________________________________________
     [ ] Perlhub
     [ ] www.perl.org
 
-________________________________________________________________________________
-
-
 6. The three standard sigils for variable declarations are:
 
     [X] '$' for scalars, '@' for arrays, '%' for hashes
@@ -78,7 +74,6 @@ ________________________________________________________________________________
     [ ] '$' for numeric, '@' for emails, '%' for percentages
     [ ] '$' for lookups, '@' for reuses, '%' for declarations
 
-________________________________________________________________________________
 
 
 7. The difference between a 'my' variable and an 'our' variable is:

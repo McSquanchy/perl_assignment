@@ -1,18 +1,5 @@
-Complete this exam by placing an 'X' in the box beside each correct
-answer, like so:
-
-    [ ] This is not the correct answer
-    [ ] This is not the correct answer either
-    [ ] This is an incorrect answer
-    [X] This is the correct answer
-    [ ] This is an irrelevant answer
-
-Scoring: Each question is worth 2 points.
-         Final score will be: SUM / 10
-
-Warning: Each question has only one correct answer. Answers to questions
-         for which two or more boxes are marked with an 'X' will be scored as zero.
-
+This test will show that the file outlier1 will be shown in the statistics for scoring more than one stddeviation from the mean.
+Use all files in this folder for the test.
 ________________________________________________________________________________
 
 1. The type of a Perl variable is determined by:

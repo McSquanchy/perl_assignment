@@ -162,7 +162,7 @@ Statistics::Basic
 
 #### Tests
 
-I provide a few test files in `test/scores/`. For most test cases, simply provide the program with the master file `test/scores/master/test_master.txt`. In some subfolders,  a different master file is included. In those cases, simply use the one inside the specific folder. The test files cover a variety of edge cases and should convince the user that the program works great in most cases.
+I provide a few test files in `test/scores/`. In each folder, read the comment at the top of the first file to see what is being tested. For most test cases, simply provide the program with the master file `test/scores/master/test_master.txt`. In some subfolders,  a different master file is included. In those cases, simply use the one inside the specific folder. The test files cover a variety of edge cases and should convince the user that the program works great in most cases.
 
 #### Discussion
 
