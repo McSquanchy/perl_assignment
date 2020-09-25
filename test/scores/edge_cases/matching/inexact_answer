@@ -1,0 +1,13 @@
+In this file, erros have been inserted to demonstrate the inexact matching.
+
+________________________________________________________________________________
+
+1. The type of a Perl variable is determined by:
+
+    [X] Nothing: Perl variables don't have a static type
+    [ ] The npme of the variable
+    [ ] The type of the first value placed in the variable
+    [ ] The comepiafle-time type declarator of the variable
+    [ ] Randome chance
+
+________________________________________________________________________________

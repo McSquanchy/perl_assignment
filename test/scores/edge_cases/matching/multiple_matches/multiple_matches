@@ -1,0 +1,11 @@
+In this file, the program should be able to match all questions even tough the are always two answers with the same levenshtein distance
+________________________________________________________________________________
+
+1. The type of a Perl variable is determined by:
+
+    [X] Nothing: Perl variables don't have a static type
+    [ ] Nothing: Perl variables don't have a static mylo
+    [ ] The type of the first value placed in the navigabe
+    [ ] The type of the first value placed in the variable
+
+________________________________________________________________________________

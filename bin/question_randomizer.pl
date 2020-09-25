@@ -6,13 +6,12 @@ use warnings;
 use diagnostics;
 use experimental 'signatures';
 use Carp;
-
 use Getopt::Long;
 use List::Util 'shuffle';
 use Tie::File;
 
 use lib "../lib/";
-use Utility::Args;
+use Utility;
 
 # Ascii header
 state $ascii_header = q(
@@ -23,7 +22,7 @@ state $ascii_header = q(
  / _, _/ /_/ / / / / /_/ / /_/ / / / / / / / / /_/  __/ /    
 /_/ |_|\__,_/_/ /_/\__,_/\____/_/ /_/ /_/_/ /___/\___/_/     
                                                              
-v0.2                                               09.09.2020
+v1.0                                               25.09.2020
                                        
 Created by Kevin Buman                                   
                                                              
@@ -33,54 +32,60 @@ Created by Kevin Buman
 state %args;
 
 # Read flags and store values in the hash
-GetOptions( \%args, "master=s", "output=s", "help!" )
-  or die( error_args() );
+GetOptions( \%args, "master=s", "output=s", "help!", "silent!" )
+  or die( Args::error_args() );
 
+Print::print_header($ascii_header);
 parse_args();
-print_header();
 
+# default value if not provided by the user
 my $fn_output = $args{output}
-  // get_processed_filename( extract_filename( $args{master} ) );
+  // Args::get_processed_filename( Args::extract_filename( $args{master} ) );
 
+# arrays to tie both files to
 my @input;
 my @output;
 
-print_progress("Opening master\t\t$args{master}");
+Print::print_progress("Opening master\t\t$args{master}");
+
 # tie input file to @input
 tie @input, 'Tie::File', $args{master} or die $!;
 
-print_progress("Creating file\t\t$fn_output");
+Print::print_progress("Creating file\t\t$fn_output");
+
 # tie output file to @output
 tie @output, 'Tie::File', $fn_output or die $!;
 
-print_progress("Copying content");
+Print::print_progress("Copying content");
+
 # copy master file content to the output file.
 @output = @input;
+
 # cleanup input tie;
 untie @input;
 
-shuffle_answers(\@output);
-
-print_progress("Cleaning up");
+shuffle_answers( \@output );
 
 # cleanup output tie;
 untie @output;
 
-print_progress("\nFinished execution.\tSee output file $fn_output\n\n");
+Print::print_progress("\nFinished execution.\tSee output file $fn_output\n\n");
 
 #
 # Shuffle answers and replace correct answers
 sub shuffle_answers($fh) {
+
     # holds a hash for each question
     my @answers;
 
-    print_progress("Removing indicators");
+    Print::print_progress("Removing indicators");
 
     # loop through all lines of $fh
-    for ( 0 .. scalar($fh->@*)-1) {
+    for ( 0 .. scalar( $fh->@* ) - 1 ) {
 
         # check if the current line is the beginning of a question
-        if ( $fh->[$_] =~ /^\d+\./ ) {
+        if ( $fh->[$_] =~ /^\d+ \. /x ) {
+
             # add new hash to @answers
             push @answers, { indices => [] };
         }
@@ -88,31 +93,32 @@ sub shuffle_answers($fh) {
         # check if current line contains an answer
         elsif ( $fh->[$_] =~ / \[ \s* /x ) {
 
-            # replace the marker X or x with a blank space
-            $fh->[$_] =~ s/ \[ [X,x] /\[ /x;
             # check if we've seen a question before
-            if ( $#answers >= 0 ) {
+            if ( scalar @answers > 0 ) {
+
+                # replace the marker X or x with a blank space
+                $fh->[$_] =~ s/ \[ \s* \S \s* \] /\[ \]/x;
 
                 # add line index to the array referenced by {indices}
                 push $answers[-1]->{indices}->@*, $_;
             }
         }
     }
-    
-    print_progress("Shuffling lines");
+
+    Print::print_progress("Shuffling lines");
 
     # loop through all indices of @answers
     for (@answers) {
 
         # shuffle answers of the current section
-        $fh->@[ $_->{indices}->@* ] = $fh->@[ shuffle ($_->{indices}->@*) ];
+        $fh->@[ $_->{indices}->@* ] = $fh->@[ shuffle( $_->{indices}->@* ) ];
     }
 }
 
 #
 # Parse arguments
 sub parse_args() {
-    
+
     # display usage if no arguments supplied
     if ( scalar( keys %args ) == 0 ) {
         usage();
@@ -124,10 +130,17 @@ sub parse_args() {
         usage();
         exit(0);
     }
+
+    # set silent flag to true to disable console logs
+    if ( $args{silent} ) {
+        Print::set_silent();
+    }
+
     # display error if no master file specified
     if ( !$args{master} ) {
         croak "No master file specified\n";
     }
+
     # check if master file doesn't exist or cannot be read
     elsif ( !-f $args{master} || !-r $args{master} ) {
         croak "The file $args{master} cannot be read\n";
@@ -135,13 +148,14 @@ sub parse_args() {
 }
 
 #
-# Print the ascii text at the beginning of the execution
-sub print_header() {
-    printf "%s", $ascii_header;
-}
-
-#
-# Print the current state to STDOUT
-sub print_progress($string) {
-    printf "%s\n", $string;
+# Print help to STDOUT
+sub usage() {
+    print
+"\nUsage:\n\trandomizer command syntax:\n\n\t./randomizer [options] [arguments] [optional arguments]\n\n\tGeneric command options:\n\n";
+    print "\t\t-m, --master:\tSpecify the file to be processed.\n";
+    print "\t\t-h, --help:\tRead more detailed instructions.\n";
+    print "\t\t-s, --silent:\tDisable progress output to STDOUT.\n";
+    print "\n\tOptional parameters:\n\n";
+    print "\t\t-o, --output:\tSpecify the output file.\n";
+    print "\n";
 }
