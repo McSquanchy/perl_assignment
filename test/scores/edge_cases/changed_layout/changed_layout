@@ -19,19 +19,15 @@ ________________________________________________________________________________
 2. Perl's three main types of call context (or "amount context") are:
 
     [X] List, scalar, and void
+    
     [ ] List, linear, and void
 
-
-
     [ ] List, scalar, and null
-
-
     [ ] Null, scalar, and void
+
     [ ] Blood, sweat, and tears
-________________________________________________________________________________
 
 ________________________________________________________________________________
-
 
 
 3. The "default variable" (or "topic variable") is:
