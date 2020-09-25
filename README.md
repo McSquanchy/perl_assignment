@@ -100,6 +100,14 @@ In a Unix environment, simply call
 
 from `bin/`.
 
+#### Requirements
+
+The following CPAN modules are required to execute the program:
+
+```
+Tie::File
+```
+
 ### Assignment 2 
 
 #### Description of the task
@@ -108,7 +116,7 @@ The idea is to provide a program that, given a master file and a number of compl
 
 #### Approach
 
-I parse the master file as well as all the exam files into hashes. Then, I iterate over the parsed master file and compare it against each submitted exam file, printing out missing questions and/or answers. Each correctly answered question is counted. In the end, I simply print out a score consisting of the number of right answers and the total number questions present in the file.
+I parse the master file as well as all the exam files into hashes. Then, I iterate over the parsed master file and compare it against each submitted exam file, printing out missing questions and/or answers. Each correctly answered question is counted. In the end, I simply print out a score consisting of the number of right answers and the total number questions present in the file. The code provided attempts to solve **all** parts of the assignment. For further details, please refer to the code documentation.
 
 #### Reasoning
 
@@ -132,11 +140,27 @@ For each pair of students, I count how many answers they have answered the same.
 $$
 p = \frac{nr. \ wrong \ answers}{nr. \ same \ answers}.
 $$
-Without further statistical analysis, I simply chose to report the pairs where $p >= 0.3$. As an example, let's say the exam has 20 questions with each 5 possible answers, 1 of which is correct. If two students answered 15 questions correctly,  and also answered the other questions in the same way, then $p = \frac{5}{20} = 0.25$. 
+Without further statistical analysis, I simply chose to report the pairs where $p >= 0.3$. As an example, let's say the exam has 20 questions with each 5 possible answers, 1 of which is correct. If two students answered 14 questions correctly,  and also answered the other questions in the same way, then $p = \frac{6}{20} = 0.3$. 
 
-This calculation makes the assumption that every answer is equally likely to be chosen. Naturally, this is not true. However, for smaller classes of students (30-50), I've found that it's quite hard to find a good estimate, since many answers have never been chosen and it makes not much sense to assume a zero probability for some of the answers.
+This calculation makes the assumption that every answer  is equally likely to be chosen. Naturally, this is not true. However, for smaller classes of students (30-50), I've found that it's quite hard to find a good estimate, since many answers have never been chosen and it makes not much sense to assume a zero probability for some of the answers.
 
-#### Limitations and Fault tolerance
+#### Requirements
 
+The following CPAN modules are required to execute the program:
 
+```
+String::Util
+Text::Levenshtein::Damerau
+Regexp::Grammars
+Getopt::Long
+Statistics::Basic
+```
+
+#### Tests
+
+I provide a few test files in `test/scores/`. For most test cases, simply provide the program with the master file `test/scores/master/test_master.txt`. In some subfolders,  a different master file is included. In those cases, simply use the one inside the specific folder. The test files cover a variety of edge cases and should convince the user that the program works great in most cases.
+
+#### Discussion
+
+The program provided works reliably for most of the exams. If a student response matches the master, apart from marked answers, exactly, then the score is absolutely trustworthy. However, one is best advised to not solely rely on this program to score a multiple choice exam. Using '[', ']' characters or numbers in a clever way might allow certain individuals to manipulate the scoring procedure in order to achieve a more favorable score. Especially for small number of exams (<30), it might be best to give each file a quick glance and check whether the layout has changed in any significant way.
 

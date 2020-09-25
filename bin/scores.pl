@@ -17,7 +17,6 @@ use Text::Levenshtein::Damerau qw/edistance/;
 use List::MoreUtils qw(uniq);
 use Regexp::Grammars;
 use Statistics::Basic qw(:all);
-use Array::Diff qw(diff);
 
 use lib "../lib/";
 use Utility;
