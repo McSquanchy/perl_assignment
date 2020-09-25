@@ -14,7 +14,7 @@ Dr. Damian Conway
 
 ## Environment
 
-The following programs were written and tested on vagrant running an "ubuntu/trusty64" box. In addition, all code was also tested and run on version 5.1.7 of elementary OS. In order to run the programs, perl v5.32.0 is **required**.
+The following programs were written and tested on vagrant running an "ubuntu/trusty64" box. In addition, all code was also tested and run on version 5.1.7 of elementary OS. In order to run the programs, perl v5.32.0 is **required**. All code has been formatted with an online [perl formatter](https://www.tutorialspoint.com/online_perl_formatter.htm).
 
 ### Assignment 1
 
