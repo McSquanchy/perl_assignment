@@ -4,7 +4,7 @@ This repo contains my solution to the assignment given in class.
 
 ## Maintainer
 
-Kevin Buman
+Kevin Buman (kevin.buman@students.fhnw.ch)
 
 ## Lecturer
 
