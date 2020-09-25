@@ -12,22 +12,30 @@ require Exporter;
 
 use experimental 'signatures';
 
+our $print = 1;
+
+#
+# Sets $print to 0 such that nothing gets printed to the console 
+sub set_silent() {
+    $print = 0;
+}
+
 #
 # Print the ascii text at the beginning of the execution
 sub print_header($ascii) {
-    printf "%s", $ascii;
+    printf "%s", $ascii if $print;
 }
 
 #
 # Print the current state to STDOUT
 sub print_progress($string) {
-    printf "%s\n", $string;
+    printf "%s\n", $string if $print;
 }
 
 
 ############################################################
 #
-#                   ARGS
+#                   Args
 #
 ############################################################
 
@@ -56,6 +64,13 @@ sub get_processed_filename($initialfile) {
         }
         ->(localtime) . "-" . $initialfile;
 }
+
+
+############################################################
+#
+#                   Paths
+#
+############################################################
 
 package FilePaths;
 

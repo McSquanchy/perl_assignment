@@ -1,0 +1,114 @@
+________________________________________________________________________________
+
+1. The type of a Perl variable is determined by:
+
+    [X] Nothing: Perl variables don't have a static type
+    [ ] The name of the variable
+    [ ] The type of the first value placed in the variable
+    [ ] The compile-time type declarator of the variable
+    [ ] Random chance
+
+________________________________________________________________________________
+
+19. If the array @x contains four elements,
+    1. how many elements will be in the list (1, @x, 2)?
+
+    [X] Six:   the four array elements will be flattened into the list
+    [ ] Eight: 1 * 4 * 2 = 8
+    [ ] Three: the array will become a single element within the list
+    [ ] Two:   Perl ignores non-scalar variables in a list constructor
+    [ ] None:  it won't compile; arrays can't be used in list constructors
+
+________________________________________________________________________________
+
+25. The type of a Perl variable is determined by:
+
+    [X] Nothing: Perl variables don't have a static type
+    [ ] The name of the variable
+    [ ] The type of the first value placed in the variable
+    [ ] The compile-time type declarator of the variable
+    [ ] Random chance
+
+________________________________________________________________________________
+
+32. If the array @x contains four elements,
+    how many elements will be in the list (1, @x, 2)?
+
+    [X] Six:   the four array elements will be flattened into the list
+    [ ] Eight: 1 * 4 * 2 = 8
+    [ ] Three: the array will become a single element within the list
+    [ ] Two:   Perl ignores non-scalar variables in a list constructor
+    [ ] None:  it won't compile; arrays can't be used in list constructors
+
+
+17. The type of a Perl variable is determined by:
+
+    [X] Nothing: Perl variables don't have a static type
+    [ ] The name of the variable
+    [ ] The type of the first value placed in the variable
+    [ ] The compile-time type declarator of the variable
+    [ ] Random chance
+
+________________________________________________________________________________
+
+
+34. Perl's three main types of call context (or "amount context") are:
+
+    [ R  ] List, linear, and void
+    [] List, scalar, and null
+    [C] List, scalar, and void
+    [ ] Null, scalar, and void
+    [ ] Blood, sweat, and tears
+
+
+    ________________________________________________________________________________
+
+4. The type of a Perl variable is determined by:
+
+    [X] Nothing: Perl variables don't have a static type
+
+    [ ] The name of the variable
+    [ ] The type of the first value placed in the variable
+    [ ] The compile-time type declarator of the variable
+    [ ] Random chance
+
+________________________________________________________________________________
+
+
+8. Perl's three main types of call context (or "amount context") are:
+
+    [ ] List, linear, and void
+    [ ] List, scalar, and null
+    [   X    ] List, scalar, and void
+    [ ] Null, scalar, and void
+    [ ] Blood, sweat, and tears
+
+
+Complete this exam by placing an 'X' in the box beside each correct
+answer, like so:
+
+Scoring: Each question is worth 2 points.
+         Final score will be: SUM / 10
+
+Warning: Each question has only one correct answer. Answers to questions
+         for which two or more boxes are marked with an 'X' will be scored as zero.
+
+________________________________________________________________________________
+
+9. The type of a Perl variable is determined by:
+
+    [X] Nothing: Perl variables don't have a static type
+    [ ] The name of the variable
+    [ ] The type of the first value placed in the variable
+    [ ] The compile-time type declarator of the variable
+    [ ] Random chance
+
+14. Perl's three main types of call context (or "amount context") are:
+
+    [X] List, scalar, and void
+    [ ] List, linear, and void
+    [ ] List, scalar, and null
+________________________________________________________________________________
+
+    [ ] Null, scalar, and void
+    [ ] Blood, sweat, and tears

@@ -1,0 +1,35 @@
+Complete this exam by placing an 'X' in the box beside each correct
+answer, like so:
+
+    [ ] This is not the correct answer
+    [ ] This is not the correct answer either
+    [ ] This is an incorrect answer
+    [X] This is the correct answer
+    [ ] This is an irrelevant answer
+
+Scoring: Each question is worth 2 points.
+         Final score will be: SUM / 10
+
+Warning: Each question has only one correct answer. Answers to questions
+         for which two or more boxes are marked with an 'X' will be scored as zero.
+
+________________________________________________________________________________
+
+1. The type of a Perl variable is determined by:
+
+    [X] Nothing: Perl variables don't have a static type
+    [ ] The name of the variable
+    [ ] The type of the first value placed in the variable
+    [ ] The compile-time type declarator of the variable
+    [ ] Random chance
+
+________________________________________________________________________________
+
+
+2. Perl's three main types of call context (or "amount context") are:
+
+    [] List, linear, and void
+    [] List, scalar, and null
+    [C] List, scalar, and void
+    [ ] Null, scalar, and void
+    [ ] Blood, sweat, and tears

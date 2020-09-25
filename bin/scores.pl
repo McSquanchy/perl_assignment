@@ -18,7 +18,6 @@ use Text::Levenshtein::Damerau qw/edistance/;
 use List::MoreUtils qw(uniq);
 use Regexp::Grammars;
 use Statistics::Basic qw(:all);
-use Data::Show;
 use Array::Diff qw(diff);
 
 use lib "../lib/";
@@ -38,7 +37,7 @@ state $ascii_header = q(
  \______/  \_______/ \______/ |__/       \_______/|_______/ 
                                                             
                                                             
-v0.9                                               16.09.2020
+v1.0                                               25.09.2020
                                        
 Created by Kevin Buman                                   
                                                              
@@ -118,7 +117,7 @@ my $submission_parser = qr{
         (?: \N* \S \N \n*)*?
     
     <token: checkbox>
-        \[  \s* .* \s* \]
+        \[ . \]
 
     <token: decoration>
         \N* \n
@@ -142,7 +141,6 @@ state @submission_filenames;
 
 # holds gathered statistics
 state %statistics;
-state %overall;
 
 # Print the ascii art to the console
 Print::print_header($ascii_header);
@@ -167,15 +165,21 @@ gather_statistics();
 find_cheaters();
 Print::print_progress("\n\nFinished Execution\n");
 
+#
+# parses the master file and populates @master_parse
 sub parse_master() {
     Print::print_progress("Parsing master");
 
+    # filehandle for master file
     my $fh;
 
+    # open the file
     open( $fh, $args{master} ) or die "error accessing file";
 
+    # parse file
     my $exam_text = do { local $/; readline($fh) };
 
+    # save to array
     if ( $exam_text =~ $master_parser ) {
         @master_parse = grep( $_->{question_and_answers},
             $/{master}->{master_component}->@* );
@@ -185,18 +189,25 @@ sub parse_master() {
     }
     close($fh);
 
+    # clean up structure
     sanitize_questions( \@master_parse );
 }
 
+#
+# parses all exam files and popultes %submissions
 sub parse_submissions() {
     Print::print_progress("Parsing submissions");
 
+    # iterate over each submission
     for my $submission (@submission_filenames) {
         my $fh;
 
-        open( $fh, $submission ) or die "error accessing file";
+        open( $fh, $submission ) or die "error accessing file $submission";
 
+        # parse file
         my $exam_text = do { local $/; readline($fh) };
+        
+        # store in hash
         if ( $exam_text =~ $submission_parser ) {
             my @questions_and_answers = grep( $_->{question_and_answers},
                 $/{exam_submission}->{exam_component}->@* );
@@ -210,14 +221,20 @@ sub parse_submissions() {
     }
 }
 
+#
+# prints each filename and calls check_validity()
 sub validate_completeness() {
     Print::print_progress("Checking for completeness");
+    
+    # iterate over each exam parsed
     for my $sub ( keys %submissions ) {
         printf "\n%s:\n", FilePaths::get_filename($sub);
         check_validity($sub);
     }
 }
 
+#
+# examines each file against the master file and updates %statistics accordingly
 sub check_validity($submission) {
 
     # create array with all questions
@@ -238,10 +255,13 @@ sub check_validity($submission) {
         given_correct_answers       => []
     };
 
+    # iterate over each question in the master array
     for ( 0 .. $#master_parse ) {
 
         # create iterator variable
         my $iterator = $_;
+
+        # needed so that question is only printed once
         my $question_already_printed;
 
         # check if master question is contained in submission questions
@@ -252,7 +272,7 @@ sub check_validity($submission) {
                       ->{question_and_answers}{question}{text}
                 ),
                 $_
-            )
+              )
         } @submission_questions;
 
         # if there's a match
@@ -275,8 +295,8 @@ sub check_validity($submission) {
                     $_->{question_and_answers}{question}{text} eq $closest_match
                 } $submissions{$submission}->@*
             )[0];
-
-            # show $submission_matched_question;
+            
+            # check if the student has answered the question
             if (
                 scalar(
                     grep { $_->{checkbox} =~ /\[ \s* \S \s* \]/x }
@@ -285,6 +305,7 @@ sub check_validity($submission) {
                 ) > 0
               )
             {
+                # increment the number of answers
                 $statistics{$submission}{nr_answers}++;
             }
 
@@ -303,36 +324,38 @@ sub check_validity($submission) {
                   $master_parse[$iterator]
                   ->{question_and_answers}{question}{text};
                 printf "\t\tuse instead:\t%s\n", $closest_match;
-
-                #set missing so prints will look nice
-                $missing = 1;
             }
 
+            # array with all the submitted answers
             my @submission_answers =
               $submission_matched_question->{question_and_answers}{answer}->@*;
-
-# my @submission_marked_answers = grep {$_->{checkbox} =~ /\[ \s* . \s* \]/x} @submission_answers;
-
+            
+            # array with all answers for this question in the master
             my @master_answers =
               $master_parse[$iterator]->{question_and_answers}{answer}->@*;
 
+            # counting variable to store current iteration
             my $iter = 0;
 
-            # check all answers
+            # compare master answers against exam answers
             for my $master_answer (@master_answers) {
                 $iter++;
-                my $current_q = join ".", $iterator + 1, $iter;
-                if ( !exists $overall{$current_q} ) {
-                    $overall{$current_q} = { answered => 0 };
 
-                }
+                # current question.answer (eg 16.2 -> for printing and storing in statistics)
+                my $current_q = join ".", $iterator + 1, $iter;
+
+                # find the correct answer, either by matching exactly or by closest match
                 my @answer_match = grep {
                     evalute_match( lc( $master_answer->{text} ),
                         lc( $_->{text} ) )
                 } @submission_answers;
+
+                # if there is more than one answer, chose the one with the smalles levenshtein distance
                 if ( scalar @answer_match > 1 ) {
-                    my $min_edistance = 50000;
+                    my $min_edistance = 10; # initialize at unrealistically high level
                     my $match;
+                    
+                    # find minimum
                     for (@answer_match) {
                         if (
                             edistance( lc( $master_answer->{text} ),
@@ -345,17 +368,24 @@ sub check_validity($submission) {
                             $match = $_;
                         }
                     }
+
+                    # reset array
                     @answer_match = ();
                     $answer_match[0] = $match;
                 }
+
+                # check if a matching answer was found
                 if (@answer_match) {
+
+                    # update statistics
                     $statistics{$submission}{nr_total_answers}++;
 
-                    # show @answer_match;
+                    # find closest match and either print directly or treat according to extension 1
                     my ( $m, $closest_match ) = evalute_match(
                         lc( $master_answer->{text} ),
                         lc( $answer_match[0]->{text} )
                     );
+                    
                     if ( !( $closest_match eq lc( $master_answer->{text} ) ) ) {
                         if ( !$missing ) {
                             printf "\tquestion %s:\t%s\n",
@@ -368,8 +398,14 @@ sub check_validity($submission) {
                             printf "\t\tuse instead:\t%s\n", $closest_match;
                             $missing = 1;
                         }
+                        else {
+                            printf "\t\tmissing answer: %s\n",
+                            $master_answer->{text};
+                            printf "\t\tuse instead:\t%s\n", $closest_match;
+                        }
                     }
 
+                    # evaluate the answer
                     if (
                         ( $master_answer->{checkbox} =~ /\[ \s* \S \s* \]/x )
                         && ( $answer_match[0]->{checkbox} =~
@@ -380,21 +416,22 @@ sub check_validity($submission) {
                         ) == 1
                       )
                     {
+                        # answered correctly
                         $statistics{$submission}{nr_correct_questions}++;
                         push $statistics{$submission}
-                          {given_correct_answers_pattern}->@*, $iterator + 1;
-                        $overall{$current_q}{answered}++;
+                          {given_correct_answers_pattern}->@*, $current_q;
                     }
                     elsif (
+                        # checked wrong answer
                         !( $master_answer->{checkbox} =~ /\[ \s* \S \s* \]/x )
                         && $answer_match[0]->{checkbox} =~ /\[ \s* \S \s* \]/x )
                     {
                         push $statistics{$submission}
                           {given_wrong_answers_pattern}->@*, $current_q;
-                        $overall{$current_q}{answered}++;
                     }
                 }
                 else {
+                    # answer was not found
                     if ( !$missing ) {
                         printf "\tquestion %s:\t%s\n",
                           $master_parse[$iterator]
@@ -411,7 +448,7 @@ sub check_validity($submission) {
                           $master_answer->{text};
                     }
 
-              # push the missing answer to statistics in the form "q_nr.a_index"
+                    # push the missing answer to statistics in the form "q_nr.a_index"
                     push $statistics{$submission}{missing_answers_pattern}->@*,
                       $current_q;
                 }
@@ -419,6 +456,7 @@ sub check_validity($submission) {
 
         }
         else {
+            # question missing entirely
             printf "\tmissing question: %s %s\n",
               $master_parse[$iterator]->{question_and_answers}{question}{q_nr},
               $master_parse[$iterator]->{question_and_answers}{question}{text};
@@ -430,6 +468,8 @@ sub check_validity($submission) {
     }
 }
 
+#
+# print the results for each examined file
 sub print_results() {
     Print::print_progress("\n\nResults:");
 
@@ -441,6 +481,8 @@ sub print_results() {
     }
 }
 
+#
+# Prints out statistics for the entire sample space according to extension 2
 sub gather_statistics() {
     Print::print_progress("\n\nStatistics:");
 
@@ -454,8 +496,10 @@ sub gather_statistics() {
       stddev( map { $_->{nr_correct_questions} } values %statistics );
 
     my $mean_answered = mean( map { $_->{nr_answers} } values %statistics );
-    my $min_answered  = min( map { $_->{nr_answers} } values %statistics );
-    my $max_answered  = max( map { $_->{nr_answers} } values %statistics );
+    my $min_answered  = min( map  { $_->{nr_answers} } values %statistics );
+    my $max_answered  = max( map  { $_->{nr_answers} } values %statistics );
+    
+    # print out results
 
     printf "%s %s\n%s %s (%s)\n%s %s (%s)\n\n",
       pad( "Average number of questions answered", 60, "r", ".", 1 ),
@@ -577,6 +621,8 @@ sub gather_statistics() {
     printf "\n\n";
 }
 
+#
+# reports possible collusion between student pairs according to extension 3
 sub find_cheaters() {
     Print::print_progress("\n\nPotential collusions:\n");
     my @already_done;
@@ -602,30 +648,36 @@ sub find_cheaters() {
                         push @same_false_answers, $_;
                     }
                 }
-                if ( scalar @same_false_answers > 4 ) {
-                    printf "\t\t%s\n\tand\t%s %.2f\n",
-                      Args::extract_filename($key),
-                      pad( Args::extract_filename($comparater),
-                        60, "r", ".", 1 ),
-                      (
-                        scalar @same_false_answers / (
-                            scalar @same_false_answers +
-                              scalar @same_correct_answers
-                        )
-                      );
+                if(scalar @same_false_answers > 3 ){
+                    my $probability_of_cheating = scalar @same_false_answers / (scalar @same_false_answers + scalar @same_correct_answers );
+                    if ( $probability_of_cheating >= 0.3 ) {
+                        printf "\t\t%s\n\tand\t%s %.2f\n",
+                        Args::extract_filename($key),
+                        pad( Args::extract_filename($comparater),
+                            60, "r", ".", 1 ),
+                        (
+                            scalar @same_false_answers / (
+                                scalar @same_false_answers +
+                                scalar @same_correct_answers
+                            )
+                        );
+                    }
                 }
+
             }
         }
         push @already_done, $key;
     }
 }
 
+#
+# finds closest match according to requirements of extension 1
 sub evalute_match ( $string, $possible_match ) {
     if ( $string eq $possible_match ) {
         return ( 1, $string );
     }
     elsif (
-        lc( $string         =~ s/\s{2,}/ /gr ) eq
+        lc( $string =~ s/\s{2,}/ /gr ) eq
         lc( $possible_match =~ s/\s{2,}/ /gr ) )
     {
         return ( 1, ( $string =~ s/\s{2,}/ /gr ) );
@@ -633,7 +685,7 @@ sub evalute_match ( $string, $possible_match ) {
     elsif (
         (
             edistance(
-                lc( $string         =~ s/\s{2,}/ /gr ),
+                lc( $string =~ s/\s{2,}/ /gr ),
                 lc( $possible_match =~ s/\s{2,}/ /gr )
             ) / length( ( $string =~ s/\s{2,}/ /gr ) )
         ) < 0.1
@@ -645,6 +697,8 @@ sub evalute_match ( $string, $possible_match ) {
     return undef;
 }
 
+#
+# utility subroutine to pad a string
 sub pad {
     my ( $text, $width, $which, $padchar, $is_trunc ) = @_;
     if ($which) {
@@ -675,6 +729,7 @@ sub pad {
     $text;
 }
 
+# fassade subroutine to sanitize each question, i.e. trim, remove blanks etc.
 sub sanitize_questions($arr) {
     for my $val ( $arr->@* ) {
         $val->{question_and_answers}{question}{text} =
@@ -685,10 +740,14 @@ sub sanitize_questions($arr) {
     }
 }
 
+#
+# removes multiple consecutive blank spaces
 sub sanitize_string($str) {
     trim( $str =~ s/\s{2,}/ /gr );
 }
 
+#
+# Print help to STDOUT
 sub usage {
     print
 "Usage:\n\trandomizer command syntax:\n\n\t\t./randomizer [options] [arguments]\n\n\tGeneric command options:\n\n";
@@ -698,6 +757,8 @@ sub usage {
     print "\n";
 }
 
+#
+# Parse arguments
 sub validate_args() {
 
     # display usage if no args supplied

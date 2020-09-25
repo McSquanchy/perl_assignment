@@ -6,7 +6,6 @@ use warnings;
 use diagnostics;
 use experimental 'signatures';
 use Carp;
-
 use Getopt::Long;
 use List::Util 'shuffle';
 use Tie::File;
@@ -23,7 +22,7 @@ state $ascii_header = q(
  / _, _/ /_/ / / / / /_/ / /_/ / / / / / / / / /_/  __/ /    
 /_/ |_|\__,_/_/ /_/\__,_/\____/_/ /_/ /_/_/ /___/\___/_/     
                                                              
-v0.2                                               09.09.2020
+v1.0                                               25.09.2020
                                        
 Created by Kevin Buman                                   
                                                              
@@ -33,20 +32,19 @@ Created by Kevin Buman
 state %args;
 
 # Read flags and store values in the hash
-GetOptions( \%args, "master=s", "output=s", "help!" )
+GetOptions( \%args, "master=s", "output=s", "help!", "silent!" )
   or die( Args::error_args() );
 
-parse_args();
 Print::print_header($ascii_header);
+parse_args();
 
+# default value if not provided by the user
 my $fn_output = $args{output}
   // Args::get_processed_filename( Args::extract_filename( $args{master} ) );
 
+# arrays to tie both files to
 my @input;
 my @output;
-
-my $size = -s $args{master};
-say $size;
 
 Print::print_progress("Opening master\t\t$args{master}");
 
@@ -71,13 +69,6 @@ shuffle_answers( \@output );
 # cleanup output tie;
 untie @output;
 
-Print::print_progress("Cleaning up");
-
-# Fix issue with File::Tie's untie method adding a blank line to the end of the file
-# by truncating to the original master's filesize
-truncate( $fn_output,    $size );
-truncate( $args{master}, $size );
-
 Print::print_progress("\nFinished execution.\tSee output file $fn_output\n\n");
 
 #
@@ -93,7 +84,7 @@ sub shuffle_answers($fh) {
     for ( 0 .. scalar( $fh->@* ) - 1 ) {
 
         # check if the current line is the beginning of a question
-        if ( $fh->[$_] =~ /^\d+\./ ) {
+        if ( $fh->[$_] =~ /^\d+ \. /x ) {
 
             # add new hash to @answers
             push @answers, { indices => [] };
@@ -103,10 +94,10 @@ sub shuffle_answers($fh) {
         elsif ( $fh->[$_] =~ / \[ \s* /x ) {
 
             # check if we've seen a question before
-            if ( $#answers >= 0 ) {
+            if ( scalar @answers > 0 ) {
 
                 # replace the marker X or x with a blank space
-                $fh->[$_] =~ s/ \[ [X,x] /\[ /x;
+                $fh->[$_] =~ s/ \[ \s* \S \s* \] /\[ \]/x;
 
                 # add line index to the array referenced by {indices}
                 push $answers[-1]->{indices}->@*, $_;
@@ -138,6 +129,11 @@ sub parse_args() {
     if ( $args{help} ) {
         usage();
         exit(0);
+    }
+
+    # set silent flag to true to disable console logs
+    if ( $args{silent} ) {
+            Print::set_silent();
     }
 
     # display error if no master file specified
